@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><style>/* 23/11: sem esticar */html,body,*{overscroll-behavior:none}</style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Banco de Dados (Neon)</title>
+<style>
+  :root { --bg:#0f172a; --card:#162036; --li:#2a3550; --txt:#e6edf8; --mut:#93a4c3; --ok:#22c55e; --er:#ef4444; --ac:#60a5fa; }
+  @media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) { --bg:#f5f7fb; --card:#fff; --li:#d8deea; --txt:#1b2438; --mut:#5b6b88; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--txt); font: 15px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; padding: 12px 16px 40px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .mut { color: var(--mut); font-size: 13px; }
+  .card { background: var(--card); border: 1px solid var(--li); border-radius: 12px; padding: 12px; margin: 10px 0; }
+  input, textarea, select { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--li); background: transparent; color: var(--txt); font: inherit; }
+  textarea { min-height: 110px; font: 13px/1.4 ui-monospace, Menlo, Consolas, monospace; }
+  .linha { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; align-items: center; }
+  button { background: #1e2b48; color: #fff; border: 1px solid var(--li); border-radius: 10px; padding: 9px 12px; font: inherit; cursor: pointer; min-height: 40px; }
+  button.p { background: #2563eb; border-color: #2563eb; }
+  button.perigo { background: #7f1d1d; border-color: #7f1d1d; }
+  .st { font-weight: 600; } .st.ok { color: var(--ok); } .st.er { color: var(--er); }
+  .tab { display: flex; justify-content: space-between; gap: 8px; padding: 10px; border: 1px solid var(--li); border-radius: 10px; margin: 6px 0; cursor: pointer; }
+  .tab:hover { border-color: var(--ac); }
+  .grade { overflow: auto; max-height: 60vh; border: 1px solid var(--li); border-radius: 10px; }
+  table { border-collapse: collapse; font-size: 13px; min-width: 100%; }
+  th, td { border-bottom: 1px solid var(--li); padding: 6px 8px; text-align: left; vertical-align: top; max-width: 320px; overflow-wrap: anywhere; }
+  th { position: sticky; top: 0; background: var(--card); }
+  code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 9; }
+  .modal > div { background: var(--card); border: 1px solid var(--li); border-radius: 12px; padding: 16px; width: min(520px, 100%); }
+</style>
+  <!-- PWA:inicio (gerado pelo Mini SK — pode refazer no painel 📱 PWA) -->
+  <link rel="manifest" href="banco-neon.webmanifest">
+  <meta name="theme-color" content="#0f1420">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Banco de Dados (Neon)">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <script>
+    if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+      addEventListener('load', function () { navigator.serviceWorker.register('service-worker.js').catch(function (e) { console.warn('Service worker:', e); }); });
+    }
+  </script>
+  <!-- PWA:fim -->
+</head>
+<body>
+<h1>🗄 Banco de Dados (Neon) <span class="mut">v18/11</span></h1>
+<p class="mut">Cole o endereço do seu Neon e veja as tabelas, o que tem dentro, baixe tudo e crie tabelas — sem abrir o site em inglês. Comando que <b>muda ou apaga</b> pede confirmação.</p>
+
+<div class="card">
+  <label class="mut" for="conn">Endereço do Neon (no neon.tech: <b>Connect</b> → copie o que começa com <code>postgresql://</code>; toque no 👁 antes, para vir com a senha)</label>
+  <input id="conn" type="password" placeholder="postgresql://usuario:senha@ep-xxxx.neon.tech/neondb?sslmode=require" autocomplete="off">
+  <div class="linha"><button class="p" id="b-con">🔌 Conectar</button><label class="mut"><input type="checkbox" id="lembrar" style="width:auto" checked> lembrar neste aparelho (desmarque se o aparelho não for seu)</label></div>
+  <div id="st" class="st"></div>
+</div>
+
+<div id="area" hidden>
+  <div class="card">
+    <div class="linha"><b style="flex:1">📋 Tabelas</b><button id="b-atual">⟳</button><button id="b-backup">⬇ Baixar tudo (backup)</button></div>
+    <div id="tabelas"></div>
+  </div>
+  <div class="card" id="rc-card">
+    <b>🔎 Reconhecer este banco</b>
+    <p class="mut">Lê tudo, descobre <b>de qual app é cada coisa</b> (Meu Chat, SK Jurídico, o SK Jurídico 1.7 antigo da Replit…) e devolve para o lugar certo — sem você mexer em JSON. Também baixa cada parte separada e o <b>formato</b> do banco (para nenhuma IA criar tabela errada).</p>
+    <div class="linha"><button class="p" id="rc-ir">🔎 Reconhecer</button><button id="rc-formato">📐 Baixar o formato (esquema)</button></div>
+    <div id="rc-res"></div>
+  </div>
+  <div class="card" id="ver" hidden>
+    <div class="linha"><b id="ver-nome" style="flex:1"></b><button id="b-ant">◀</button><span id="ver-pag" class="mut"></span><button id="b-prox">▶</button></div>
+    <p id="ver-cols" class="mut"></p>
+    <div class="grade" id="ver-grade"></div>
+    <div class="linha"><button id="b-csv">⬇ CSV (Excel)</button><button id="b-json">⬇ JSON</button></div>
+  </div>
+  <div class="card">
+    <b>✨ Criar uma tabela pronta</b>
+    <div class="linha"><select id="modelo" style="flex:1"></select><button class="p" id="b-criar">Criar</button></div>
+    <p id="modelo-txt" class="mut"></p>
+  </div>
+  <div class="card" id="ia-card">
+    <b>🤖 Pedir à IA (fale em português)</b>
+    <p class="mut">Diga o que você quer, do seu jeito. Ex.: <i>"quero uma tabela de clientes com nome, CPF e telefone"</i> ou <i>"acrescenta o campo data da audiência nos processos"</i>. A IA vê as tabelas que você já tem, monta o comando e explica antes. Você confere e toca em ▶ Rodar.</p>
+    <textarea id="ia-pedido" placeholder="O que você quer fazer no banco?" style="min-height:70px"></textarea>
+    <div class="linha"><button id="ia-voz" title="Falar em vez de escrever">🎤 Falar</button><button class="p" id="ia-montar">🤖 Montar o comando</button></div>
+    <div id="ia-resp"></div>
+  </div>
+  <div class="card">
+    <b>🧩 Criar uma tabela do meu jeito</b>
+    <p class="mut">Pense numa planilha: a <b>tabela</b> é a planilha, cada <b>campo</b> é uma coluna, cada <b>linha</b> é um registro. Escreva o nome e os campos — eu monto o comando.</p>
+    <input id="nt-nome" placeholder="Nome da tabela (ex.: honorarios)">
+    <div id="nt-campos"></div>
+    <div class="linha"><button id="nt-mais">＋ Campo</button><button class="p" id="nt-criar">🧩 Criar a tabela</button></div>
+    <p id="nt-sql" class="mut"></p>
+  </div>
+  <div class="card">
+    <b>➕ Acrescentar um campo numa tabela que já existe</b>
+    <div class="linha"><select id="nc-tab" style="flex:1"></select></div>
+    <div class="linha"><input id="nc-nome" placeholder="Nome do campo (ex.: telefone2)" style="flex:2"><select id="nc-tipo" style="flex:1"></select></div>
+    <div class="linha"><button class="p" id="nc-ok">➕ Acrescentar</button></div>
+  </div>
+  <div class="card">
+    <b>▶ Comando (SQL)</b>
+    <p class="mut">Para consultar: <code>select * from mc_itens limit 20</code>. Comandos que mudam ou apagam (insert, update, delete, drop, alter, truncate…) pedem que você escreva CONFIRMO.</p>
+    <textarea id="sql" spellcheck="false" autocapitalize="off"></textarea>
+    <div class="linha"><button class="p" id="b-rodar">▶ Rodar</button></div>
+    <div class="grade" id="res"></div>
+  </div>
+</div>
+
+<script>/* reconhecer.js — cópia embutida (18/11) */
+/* ♻️ RECONHECER (18/11) — a mesma peça no Meu Chat, no SK Jurídico HTML e no 🗄 Banco.
+   Recebe QUALQUER coisa que veio dos seus apps e diz sozinho O QUE É e PARA ONDE VAI:
+   - backup do Meu Chat (.json) · backup do SK Jurídico HTML / Assistente Jurídico (.json)
+   - o "⬇ backup" do 🗄 Banco (todas as tabelas) ou o próprio banco lido direto (Neon)
+   - a tabela mc_itens (Meu Chat + jurídico na nuvem): separa por tipo
+   - o banco ANTIGO do SK Jurídico 1.7 da Replit (ementas, doc_templates, custom_actions, ai_history, snippets, conversations/messages…)
+   - qualquer outra tabela: mostra as colunas e quantas linhas tem (para você ou a IA entender o formato)
+   Devolve um "pacote" já no formato de cada app. Nada é apagado: restaurar sempre JUNTA. */
+(function () {
+  'use strict';
+  const LOJAS_JUR = ['documentos', 'modelos', 'ementas', 'historico', 'conversas', 'regras', 'codigos'];
+  const vazio = () => ({ juridico: { lojas: Object.fromEntries(LOJAS_JUR.map((l) => [l, []])), prefs: {} }, meuchat: { conversas: [], memoria: '', codigos: {}, links: [] }, outros: [] });
+  const quando = (v) => { const t = v ? Date.parse(v) : NaN; return isNaN(t) ? (typeof v === 'number' ? v : Date.now()) : t; };
+  const txtHtml = (t) => '<p>' + String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/\n{2,}/g, '</p><p>').replace(/\n/g, '<br>') + '</p>';
+  const colunas = (linhas) => { const s = new Set(); (linhas || []).slice(0, 50).forEach((r) => r && typeof r === 'object' && Object.keys(r).forEach((k) => s.add(k))); return [...s]; };
+  const parse = (v) => { if (typeof v !== 'string') return v; try { return JSON.parse(v); } catch (e) { return v; } };
+
+  // ── as tabelas do SK Jurídico 1.7 (Replit) → lojas do SK Jurídico HTML ──
+  const ANTIGO = {
+    ementas: (r) => ['ementas', { id: 'v17-' + r.id, titulo: r.titulo || 'Ementa', categoria: r.categoria || '', texto: r.texto || '', marcada: false, criado: Date.now() }],
+    doc_templates: (r) => ['modelos', { id: 'v17-' + r.id, titulo: r.titulo || 'Modelo', html: /<\w/.test(r.conteudo || '') ? r.conteudo : txtHtml(r.conteudo), categoria: r.categoria || '', criado: Date.now() }],
+    prompt_templates: (r) => ['regras', { id: 'v17p-' + r.id, tipo: 'regra', titulo: r.titulo || 'Modelo de pedido', texto: r.texto || '', ativa: false, criado: Date.now() }],
+    custom_actions: (r) => ['regras', { id: 'v17a-' + r.id, tipo: 'regra', titulo: '⚡ Ação: ' + (r.label || 'sem nome'), texto: (r.description ? r.description + '\n\n' : '') + (r.prompt || ''), ativa: false, criado: Date.now() }],
+    ai_history: (r) => ['historico', { id: 'v17-' + r.id, titulo: (r.action || 'IA') + ' — ' + String(r.input_preview || r.inputPreview || '').slice(0, 60), html: txtHtml(r.result), md: r.result || '', acao: r.action || '', pergunta: r.input_preview || r.inputPreview || '', criado: quando(r.created_at || r.createdAt) }],
+    snippets: (r) => ['codigos', { id: 'v17-' + r.id, nome: r.title || 'Código', codigo: (r.mode === 'html' || !r.mode ? '<!doctype html>\n<style>\n' + (r.css || '') + '\n</style>\n' + (r.html || '') + '\n<script>\n' + (r.js || '') + '\n<\/script>' : r.js || r.html || ''), tipo: 'html', criado: Date.now() }],
+  };
+  const NOMES_ANTIGO = { ementas: 'ementas', doc_templates: 'modelos de documento', prompt_templates: 'modelos de pedido', custom_actions: 'ações personalizadas (o motor que você criou)', ai_history: 'histórico da IA', snippets: 'códigos (playground)', conversations: 'conversas', messages: 'mensagens' };
+
+  function deTabelas(tabelas, p, achados) {
+    for (const [nome, linhas0] of Object.entries(tabelas || {})) {
+      const linhas = Array.isArray(linhas0) ? linhas0 : [];
+      if (nome === 'mc_itens') {
+        let c = { conv: 0, mem: 0, cod: 0, jur: 0, cofre: 0 };
+        for (const r of linhas) {
+          if (!r || r.apagado === true || r.apagado === 't') continue;
+          const d = parse(r.dados); const tipo = String(r.tipo || '');
+          if (tipo === 'conversa' && d && d.msgs) { p.meuchat.conversas.push(d); c.conv++; }
+          else if (tipo === 'memoria' && d) { p.meuchat.memoria += (p.meuchat.memoria ? '\n' : '') + (d.texto || ''); c.mem++; }
+          else if (tipo === 'codigo' && d) { p.meuchat.codigos[r.id] = d; c.cod++; }
+          else if (tipo.startsWith('jur:') && tipo !== 'jur:prefs' && d) { const l = tipo.slice(4); if (p.juridico.lojas[l]) { p.juridico.lojas[l].push(d); c.jur++; } }
+          else if (tipo === 'jur:prefs' && d) Object.assign(p.juridico.prefs, d);
+          else if (tipo === 'cofre') c.cofre++;
+        }
+        achados.push({ nome: 'mc_itens (Meu Chat + SK Jurídico na nuvem)', reconhecido: true, linhas: linhas.length, detalhe: c.conv + ' conversa(s) e ' + c.cod + ' código(s) do Meu Chat' + (c.mem ? ', a memória' : '') + ' · ' + c.jur + ' item(ns) do SK Jurídico' + (c.cofre ? ' · 🔐 cofre das chaves (trancado: abra em ☁️ → Trazer as chaves)' : '') });
+      } else if (ANTIGO[nome]) {
+        for (const r of linhas) { const [l, it] = ANTIGO[nome](r); p.juridico.lojas[l].push(it); }
+        achados.push({ nome: nome + ' (SK Jurídico 1.7 da Replit)', reconhecido: true, linhas: linhas.length, detalhe: linhas.length + ' ' + NOMES_ANTIGO[nome] + ' → SK Jurídico HTML' });
+      } else if (nome === 'conversations' && tabelas.messages) {
+        const msgs = tabelas.messages || [];
+        for (const cv of linhas) {
+          const m = msgs.filter((x) => String(x.conversation_id || x.conversationId) === String(cv.id)).sort((a, b) => quando(a.created_at || a.createdAt) - quando(b.created_at || b.createdAt));
+          p.juridico.lojas.conversas.push({ id: 'v17-' + cv.id, titulo: cv.title || 'Conversa', criado: quando(cv.created_at || cv.createdAt), msgs: m.map((x) => ({ role: x.role === 'user' ? 'user' : 'assistant', content: x.content || '', t: quando(x.created_at || x.createdAt) })) });
+        }
+        achados.push({ nome: 'conversations + messages (SK Jurídico 1.7)', reconhecido: true, linhas: linhas.length, detalhe: linhas.length + ' conversa(s) com ' + msgs.length + ' mensagem(ns) → SK Jurídico HTML' });
+      } else if (nome === 'messages' && tabelas.conversations) { /* já foi junto com conversations */ }
+      else {
+        p.outros.push({ nome, linhas });
+        achados.push({ nome, reconhecido: false, linhas: linhas.length, detalhe: 'não é de nenhum app conhecido. Colunas: ' + (colunas(linhas).join(', ') || '(vazia)') });
+      }
+    }
+  }
+
+  // o principal: olha o que veio e diz o que é
+  function detectar(obj, origem) {
+    const p = vazio(), achados = [];
+    let formato = 'desconhecido';
+    if (obj && obj.app === 'meu-chat') {
+      formato = 'Backup do Meu Chat';
+      p.meuchat.conversas = obj.conversas || []; p.meuchat.memoria = obj.memoria || '';
+      achados.push({ nome: 'Meu Chat', reconhecido: true, linhas: (obj.conversas || []).length, detalhe: (obj.conversas || []).length + ' conversa(s)' + (obj.memoria ? ' e a memória' : '') + ((obj.chaves || []).length ? ' · ⚠ tem ' + obj.chaves.length + ' chave(s) dentro' : '') });
+      p.meuchat.original = obj;
+    } else if (obj && obj.app === 'assistente-juridico') {
+      formato = 'Backup do SK Jurídico HTML';
+      for (const [l, itens] of Object.entries(obj.lojas || {})) if (p.juridico.lojas[l]) p.juridico.lojas[l] = itens;
+      achados.push({ nome: 'SK Jurídico HTML', reconhecido: true, linhas: Object.values(obj.lojas || {}).reduce((t, x) => t + x.length, 0), detalhe: LOJAS_JUR.map((l) => (obj.lojas && obj.lojas[l] ? obj.lojas[l].length : 0) + ' ' + l).join(' · ') });
+      p.juridico.prefs = obj.prefs || {};
+    } else if (obj && obj.tabelas && typeof obj.tabelas === 'object') {
+      formato = 'Banco de dados (' + Object.keys(obj.tabelas).length + ' tabela(s))';
+      deTabelas(obj.tabelas, p, achados);
+    } else if (Array.isArray(obj) && obj.length && obj[0] && 'tipo' in obj[0] && 'dados' in obj[0]) {
+      formato = 'Tabela mc_itens (exportada)'; deTabelas({ mc_itens: obj }, p, achados);
+    } else if (Array.isArray(obj)) {
+      formato = 'Lista de ' + obj.length + ' item(ns)';
+      const cols = colunas(obj);
+      if (cols.includes('texto') && cols.includes('titulo')) { obj.forEach((r, i) => p.juridico.lojas.ementas.push({ id: 'imp-' + (r.id || i), titulo: r.titulo, categoria: r.categoria || '', texto: r.texto, marcada: false, criado: Date.now() })); achados.push({ nome: 'lista', reconhecido: true, linhas: obj.length, detalhe: 'parece EMENTAS (titulo + texto) → SK Jurídico HTML' }); }
+      else { p.outros.push({ nome: origem || 'lista', linhas: obj }); achados.push({ nome: origem || 'lista', reconhecido: false, linhas: obj.length, detalhe: 'Colunas: ' + cols.join(', ') }); }
+    } else if (obj && typeof obj === 'object') {
+      // talvez um objeto de tabelas sem o "tabelas"
+      const arrays = Object.entries(obj).filter(([, v]) => Array.isArray(v));
+      if (arrays.length) { formato = 'Conjunto de ' + arrays.length + ' lista(s)'; deTabelas(Object.fromEntries(arrays), p, achados); }
+    }
+    const nJur = Object.values(p.juridico.lojas).reduce((t, x) => t + x.length, 0), nMC = p.meuchat.conversas.length + Object.keys(p.meuchat.codigos).length + (p.meuchat.memoria ? 1 : 0);
+    return { formato, achados, pacote: p, nJur, nMC };
+  }
+
+  // 📐 o FORMATO de um banco: tabelas, colunas e o SQL para criar igual (para a IA e para você)
+  function formatoMarkdown(colunasPorTabela, contagem) {
+    let md = '# 📐 Formato do banco\n\nGerado em ' + new Date().toLocaleString('pt-BR') + '. Mande isto para a IA antes de pedir mudanças: assim ela não cria tabela no formato errado.\n\n';
+    let sql = '';
+    for (const [t, cols] of Object.entries(colunasPorTabela)) {
+      md += '## ' + t + ' (' + (contagem[t] != null ? contagem[t] + ' linhas' : '?') + ')\n\n| coluna | tipo | vazio? | padrão |\n|---|---|---|---|\n' + cols.map((c) => '| ' + c.column_name + ' | ' + c.data_type + ' | ' + (c.is_nullable === 'YES' ? 'pode' : 'não') + ' | ' + (c.column_default || '') + ' |').join('\n') + '\n\n';
+      sql += 'create table if not exists ' + t + ' (\n' + cols.map((c) => '  ' + c.column_name + ' ' + (c.data_type === 'character varying' ? 'text' : c.data_type) + (c.is_nullable === 'NO' ? ' not null' : '') + (c.column_default && !/nextval/.test(c.column_default) ? ' default ' + c.column_default : '')).join(',\n') + '\n);\n\n';
+    }
+    return md + '## SQL para criar igual\n\n```sql\n' + sql + '```\n';
+  }
+  window.Reconhecer = { detectar, formatoMarkdown, LOJAS_JUR };
+})();
+
+</script>
+<script>
+(function () {
+  'use strict';
+  const $ = (s) => document.querySelector(s);
+  const E = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const CDN = 'https://cdn.jsdelivr.net/npm/@neondatabase/serverless@0.10.4/+esm';
+  let sql = null, atual = null, pag = 0, POR = 50, ultimas = [];
+  const MODELOS = {
+    mc_itens: ['Meu Chat + SK Jurídico (a nuvem dos dois apps)', 'create table if not exists mc_itens (tipo text not null, id text not null, dados jsonb, apagado boolean not null default false, atualizado bigint not null, primary key (tipo, id));\ncreate index if not exists mc_itens_atualizado on mc_itens (atualizado);'],
+    clientes: ['Clientes do escritório (nome, CPF, telefone, e-mail, anotações)', 'create table if not exists clientes (id bigserial primary key, nome text not null, cpf text, telefone text, email text, endereco text, anotacoes text, criado timestamptz not null default now());'],
+    processos: ['Processos (número, cliente, vara, situação, próximo prazo)', 'create table if not exists processos (id bigserial primary key, numero text unique, cliente text, vara text, assunto text, situacao text, proximo_prazo date, anotacoes text, criado timestamptz not null default now());'],
+    prazos: ['Prazos (processo, o que fazer, data limite, feito?)', 'create table if not exists prazos (id bigserial primary key, processo text, oque text not null, data_limite date not null, feito boolean not null default false, criado timestamptz not null default now());'],
+  };
+  $('#modelo').innerHTML = Object.entries(MODELOS).map(([k, v]) => '<option value="' + k + '">' + E(k + ' — ' + v[0]) + '</option>').join('');
+  const mostrarModelo = () => { $('#modelo-txt').innerHTML = '<code>' + E(MODELOS[$('#modelo').value][1]) + '</code>'; };
+  $('#modelo').onchange = mostrarModelo; mostrarModelo();
+
+  // o mesmo endereço do Meu Chat / SK Jurídico (se já estiver guardado neste aparelho)
+  try { const g = JSON.parse(localStorage.getItem('meuchat:nuvem:neon') || '""'); if (g) { $('#conn').value = g; $('#lembrar').checked = true; } } catch (e) {}
+
+  const st = (t, ok) => { const el = $('#st'); el.textContent = t; el.className = 'st ' + (ok === true ? 'ok' : ok === false ? 'er' : ''); };
+  function traduzir(e) {
+    const t = String((e && e.message) || e);
+    if (/password authentication failed|28P01/i.test(t)) return 'A senha do endereço está errada (copie de novo em Connect, com o 👁).';
+    if (/does not exist/i.test(t) && /relation|table/i.test(t)) return 'Essa tabela não existe.';
+    if (/syntax error/i.test(t)) return 'O comando tem um erro de escrita: ' + t;
+    if (/fetch|network|Failed/i.test(t)) return 'Sem conexão (internet ou endereço errado).';
+    return t;
+  }
+  async function q(texto, params) { return sql(texto, params || []); }
+
+  $('#b-con').onclick = async () => {
+    const c = $('#conn').value.trim();
+    if (!/^postgres(ql)?:\/\//i.test(c)) return st('Cole o endereço que começa com postgresql://', false);
+    st('⏳ Conectando…');
+    try {
+      const m = await import(CDN);
+      sql = m.neon(c, { disableWarningInBrowsers: true });
+      const v = await q('select version() as v, current_database() as db');
+      st('🟢 Conectado ao banco "' + v[0].db + '" (' + String(v[0].v).split(' ').slice(0, 2).join(' ') + ')', true);
+      try { if ($('#lembrar').checked) localStorage.setItem('meuchat:nuvem:neon', JSON.stringify(c)); else localStorage.removeItem('meuchat:nuvem:neon'); } catch (e) {}
+      $('#area').hidden = false; listar();
+    } catch (e) { sql = null; $('#area').hidden = true; st('🔴 Não conectou: ' + traduzir(e), false); }
+  };
+
+  async function listar() {
+    const el = $('#tabelas'); el.innerHTML = '<p class="mut">⏳ Lendo as tabelas…</p>';
+    try {
+      const t = await q("select table_name from information_schema.tables where table_schema = 'public' and table_type = 'BASE TABLE' order by table_name");
+      if (!t.length) { el.innerHTML = '<p class="mut">Nenhuma tabela ainda. Crie uma em ✨ Criar uma tabela pronta.</p>'; return; }
+      const linhas = [];
+      for (const r of t.slice(0, 60)) { let n = '?'; try { n = (await q('select count(*)::int as n from "' + r.table_name.replace(/"/g, '""') + '"'))[0].n; } catch (e) {} linhas.push([r.table_name, n]); }
+      el.innerHTML = linhas.map(([n, c]) => '<div class="tab" data-t="' + E(n) + '"><b>' + E(n) + '</b><span class="mut">' + c + ' linha(s) ›</span></div>').join('');
+    } catch (e) { el.innerHTML = '<p class="st er">' + E(traduzir(e)) + '</p>'; }
+  }
+  $('#tabelas').onclick = (e) => { const d = e.target.closest('[data-t]'); if (d) { atual = d.dataset.t; pag = 0; ver(); } };
+  $('#b-atual').onclick = listar;
+
+  function grade(rows) {
+    if (!rows.length) return '<p class="mut" style="padding:8px">(vazio)</p>';
+    const cols = Object.keys(rows[0]);
+    const cel = (v) => { if (v == null) return '<span class="mut">—</span>'; if (typeof v === 'object') v = JSON.stringify(v); v = String(v); return E(v.length > 300 ? v.slice(0, 300) + '…' : v); };
+    return '<table><tr>' + cols.map((c) => '<th>' + E(c) + '</th>').join('') + '</tr>' + rows.map((r) => '<tr>' + cols.map((c) => '<td>' + cel(r[c]) + '</td>').join('') + '</tr>').join('') + '</table>';
+  }
+  const nomeSeguro = (n) => '"' + String(n).replace(/"/g, '""') + '"';
+  async function ver() {
+    $('#ver').hidden = false; $('#ver-nome').textContent = '📄 ' + atual; $('#ver-grade').innerHTML = '<p class="mut" style="padding:8px">⏳</p>';
+    try {
+      const cols = await q('select column_name, data_type from information_schema.columns where table_schema = \'public\' and table_name = $1 order by ordinal_position', [atual]);
+      $('#ver-cols').textContent = 'Colunas: ' + cols.map((c) => c.column_name + ' (' + c.data_type + ')').join(' · ');
+      // 17/11: na tela vêm só os 300 primeiros caracteres de cada campo (antes vinha o código inteiro e dava "response is too large")
+      const lista = cols.length ? cols.map((c) => 'left(' + nomeSeguro(c.column_name) + '::text, 300) as ' + nomeSeguro(c.column_name)).join(', ') : '*';
+      ultimas = await q('select ' + lista + ' from ' + nomeSeguro(atual) + ' order by ctid limit ' + POR + ' offset ' + (pag * POR));
+      $('#ver-pag').textContent = 'pág. ' + (pag + 1);
+      $('#ver-grade').innerHTML = grade(ultimas);
+      $('#ver').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (e) { $('#ver-grade').innerHTML = '<p class="st er" style="padding:8px">' + E(traduzir(e)) + '</p>'; }
+  }
+  $('#b-ant').onclick = () => { if (pag > 0) { pag--; ver(); } };
+  $('#b-prox').onclick = () => { if (ultimas.length === POR) { pag++; ver(); } };
+
+  function baixar(nome, texto, tipo) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([texto], { type: tipo })); a.download = nome; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); }
+  function csv(rows) {
+    if (!rows.length) return '';
+    const cols = Object.keys(rows[0]); const c = (v) => { if (v == null) return ''; if (typeof v === 'object') v = JSON.stringify(v); v = String(v); return /[";\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    return '﻿' + cols.join(';') + '\n' + rows.map((r) => cols.map((k) => c(r[k])).join(';')).join('\n');
+  }
+  // em pedaços de 25 linhas: o Neon recusa resposta acima de 64 MB (era o erro "response is too large")
+  async function tudoDe(t, aviso) {
+    const out = []; let n = 0, P = 25;
+    while (n < 20000) {
+      let l;
+      try { l = await q('select * from ' + nomeSeguro(t) + ' order by ctid limit ' + P + ' offset ' + n); }
+      catch (e) { if (/too large|67108864/i.test(String(e && e.message)) && P > 1) { P = Math.max(1, Math.floor(P / 4)); continue; } throw e; } // linha grande: pega menos de cada vez
+      out.push(...l); n += l.length; if (aviso) aviso(out.length); if (l.length < P) break;
+    }
+    return out;
+  }
+  $('#b-csv').onclick = async () => { try { baixar(atual + '.csv', csv(await tudoDe(atual)), 'text/csv;charset=utf-8'); } catch (e) { alert(traduzir(e)); } };
+  $('#b-json').onclick = async () => { try { baixar(atual + '.json', JSON.stringify(await tudoDe(atual), null, 1), 'application/json'); } catch (e) { alert(traduzir(e)); } };
+  $('#b-backup').onclick = async () => {
+    try {
+      st('⏳ Juntando todas as tabelas…', true);
+      const t = await q("select table_name from information_schema.tables where table_schema = 'public' and table_type = 'BASE TABLE'");
+      const out = { feito: new Date().toISOString(), tabelas: {} };
+      for (const r of t) out.tabelas[r.table_name] = await tudoDe(r.table_name, (n) => st('⏳ ' + r.table_name + ': ' + n + ' linha(s)…', true));
+      baixar('backup-neon-' + new Date().toISOString().slice(0, 10) + '.json', JSON.stringify(out), 'application/json');
+      st('🟢 Backup baixado (' + t.length + ' tabela(s)). Guarde no HD.', true);
+    } catch (e) { st('🔴 ' + traduzir(e), false); }
+  };
+
+  // ✋ comando que muda ou apaga: escreva CONFIRMO
+  function confirmar(texto) {
+    return new Promise((ok) => {
+      const w = document.createElement('div'); w.className = 'modal';
+      w.innerHTML = '<div><h3 style="margin-top:0">✋ Esse comando muda ou apaga dados</h3><p class="mut">Confira antes. Se apagar, não tem como voltar (a não ser pelo backup).</p><pre style="white-space:pre-wrap;max-height:30vh;overflow:auto"><code>' + E(texto.slice(0, 2000)) + '</code></pre><p>Para rodar, escreva <b>CONFIRMO</b>:</p><input id="cf"><div class="linha" style="justify-content:flex-end"><button id="nao">Cancelar</button><button class="perigo" id="sim">Rodar</button></div></div>';
+      document.body.appendChild(w);
+      w.querySelector('#nao').onclick = () => { w.remove(); ok(false); };
+      w.querySelector('#sim').onclick = () => { const v = w.querySelector('#cf').value.trim().toUpperCase() === 'CONFIRMO'; w.remove(); ok(v); };
+    });
+  }
+  const MUDA = /\b(insert|update|delete|drop|alter|truncate|create|grant|revoke|rename|comment|vacuum|reindex)\b/i;
+  async function rodar(texto, seguro) {
+    const partes = texto.split(/;\s*(?:\n|$)/).map((s) => s.trim()).filter(Boolean);
+    if (!partes.length) return { ok: false, erro: 'comando vazio' };
+    if (!seguro && partes.some((p) => MUDA.test(p)) && !(await confirmar(texto))) { $('#res').innerHTML = '<p class="mut" style="padding:8px">Cancelado.</p>'; return { ok: false, cancelado: true }; }
+    $('#res').innerHTML = '<p class="mut" style="padding:8px">⏳</p>';
+    try {
+      let ult = [];
+      for (const p of partes) ult = await q(p);
+      $('#res').innerHTML = Array.isArray(ult) && ult.length ? grade(ult) : '<p class="st ok" style="padding:8px">✅ Feito.</p>';
+      if (partes.some((p) => MUDA.test(p))) listar();
+      return { ok: true, linhas: ult };
+    } catch (e) { $('#res').innerHTML = '<p class="st er" style="padding:8px">' + E(traduzir(e)) + '</p>'; return { ok: false, erro: String((e && e.message) || e) }; }
+  }
+  $('#b-rodar').onclick = () => rodar($('#sql').value);
+  // 20/11: o 📐 Esquema do projeto (Mini SK) manda o comando pronto para cá
+  try { const pronto = localStorage.getItem('sk:sqlPronto'); if (pronto) { localStorage.removeItem('sk:sqlPronto'); $('#sql').value = pronto; const d = $('#sql').closest('details'); if (d) d.open = true; setTimeout(() => { $('#sql').scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300); const av = document.createElement('p'); av.className = 'st ok'; av.textContent = '📐 Comando vindo do Esquema do projeto: cria só as tabelas que faltam (não apaga nada). Conecte, confira e toque em ► Rodar.'; $('#sql').before(av); } } catch (e) {}
+
+  // 🧩 tabela do meu jeito (sem escrever comando)
+  const TIPOS = [['texto', 'text', 'Texto'], ['numero', 'numeric', 'Número (valor, quantidade)'], ['inteiro', 'bigint', 'Número inteiro'], ['data', 'date', 'Data'], ['datahora', 'timestamptz', 'Data e hora'], ['simnao', 'boolean', 'Sim / Não'], ['dados', 'jsonb', 'Dados livres (JSON)']];
+  const opTipos = TIPOS.map((t) => '<option value="' + t[1] + '">' + t[2] + '</option>').join('');
+  const limpo = (n) => String(n || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9_]+/g, '_').replace(/^_+|_+$/g, '').replace(/^(\d)/, '_$1').slice(0, 50);
+  function campo(n, t) { const d = document.createElement('div'); d.className = 'linha'; d.innerHTML = '<input class="nt-c" placeholder="Nome do campo (ex.: cliente)" style="flex:2" value="' + E(n || '') + '"><select class="nt-t" style="flex:1">' + opTipos + '</select><button class="nt-x" title="Tirar">✕</button>'; if (t) d.querySelector('select').value = t; $('#nt-campos').appendChild(d); }
+  campo('nome', 'text'); campo('valor', 'numeric'); campo('data', 'date');
+  $('#nt-mais').onclick = () => campo();
+  $('#nt-campos').onclick = (e) => { if (e.target.classList.contains('nt-x')) e.target.parentNode.remove(); };
+  function sqlNova() {
+    const nome = limpo($('#nt-nome').value); if (!nome) throw new Error('Escreva o nome da tabela.');
+    const cs = [...document.querySelectorAll('#nt-campos .linha')].map((d) => [limpo(d.querySelector('.nt-c').value), d.querySelector('.nt-t').value]).filter((c) => c[0] && c[0] !== 'id' && c[0] !== 'criado');
+    if (!cs.length) throw new Error('Ponha pelo menos um campo.');
+    return 'create table if not exists ' + nome + ' (id bigserial primary key, ' + cs.map((c) => c[0] + ' ' + c[1]).join(', ') + ', criado timestamptz not null default now())';
+  }
+  $('#nt-campos').oninput = $('#nt-nome').oninput = () => { try { $('#nt-sql').innerHTML = '<code>' + E(sqlNova()) + '</code>'; } catch (e) { $('#nt-sql').textContent = ''; } };
+  $('#nt-campos').onchange = $('#nt-campos').oninput;
+  $('#nt-criar').onclick = async () => { try { await rodar(sqlNova(), true); } catch (e) { $('#res').innerHTML = '<p class="st er" style="padding:8px">' + E(e.message) + '</p>'; } };
+  // ➕ campo novo numa tabela que já existe (não apaga nada)
+  $('#nc-tipo').innerHTML = opTipos;
+  async function pintarNc() { try { const t = await q("select table_name from information_schema.tables where table_schema = 'public' and table_type = 'BASE TABLE' order by table_name"); $('#nc-tab').innerHTML = t.map((r) => '<option>' + E(r.table_name) + '</option>').join(''); } catch (e) {} }
+  const listar0 = listar; listar = async function () { await listar0(); pintarNc(); };
+  $('#nc-ok').onclick = async () => {
+    const t = $('#nc-tab').value, c = limpo($('#nc-nome').value);
+    if (!t || !c) return alert('Escolha a tabela e escreva o nome do campo.');
+    await rodar('alter table ' + nomeSeguro(t) + ' add column if not exists ' + c + ' ' + $('#nc-tipo').value, true);
+  };
+  $('#b-criar').onclick = () => rodar(MODELOS[$('#modelo').value][1], true); // "if not exists": não apaga nada
+
+
+  // ---------- 🔎 RECONHECER (18/11) ----------
+  function appPai() {
+    let P = null; try { P = window.parent && window.parent !== window ? window.parent : null; } catch (e) { P = null; }
+    try { if (P && P.J && P.J.restaurar) return { nome: 'SK Jurídico', abrir: (r) => P.J.restaurar.janela(r, 'Do banco Neon') }; } catch (e) {}
+    try { if (P && P.MC && P.MC.restaurar) return { nome: 'Meu Chat', abrir: (r) => P.MC.restaurar.janela(r, 'Do banco Neon') }; } catch (e) {}
+    return null;
+  }
+  async function lerTudo() {
+    const t = await q("select table_name from information_schema.tables where table_schema = 'public' and table_type = 'BASE TABLE' order by table_name");
+    const tabelas = {};
+    for (const r of t) tabelas[r.table_name] = await tudoDe(r.table_name, (n) => { $('#rc-res').innerHTML = '<p class="mut">⏳ ' + E(r.table_name) + ': ' + n + ' linha(s)…</p>'; });
+    return tabelas;
+  }
+  let rcUltimo = null;
+  $('#rc-ir').onclick = async () => {
+    if (!sql) { $('#rc-res').innerHTML = '<p class="st er">Conecte primeiro (🔌 lá em cima).</p>'; return; }
+    try {
+      const tabelas = await lerTudo();
+      const r = Reconhecer.detectar({ tabelas }, 'banco Neon'); rcUltimo = r; const p = r.pacote, pai = appPai();
+      const L = p.juridico.lojas;
+      $('#rc-res').innerHTML = '<p><b>O que tem aqui:</b> ' + E(r.formato) + '</p><ul class="mut">' + r.achados.map((a) => '<li>' + (a.reconhecido ? '✅' : '❔') + ' <b>' + E(a.nome) + '</b> — ' + E(a.detalhe) + '</li>').join('') + '</ul>' +
+        (pai ? '<div class="linha"><button class="p" id="rc-pai">📥 Trazer para o ' + E(pai.nome) + ' (sem apagar nada)</button></div>' : '<p class="mut">Abra esta ferramenta dentro do SK Jurídico ou do Meu Chat para trazer direto. Daqui dá para baixar cada parte pronta:</p>') +
+        '<div class="linha">' +
+        (r.nJur ? '<button id="rc-jur">⬇ Parte do SK Jurídico (' + r.nJur + ')</button>' : '') +
+        (r.nMC ? '<button id="rc-mc">⬇ Parte do Meu Chat (' + r.nMC + ')</button>' : '') + '</div>' +
+        '<p class="mut" style="margin-bottom:0">Baixar só um pedaço:</p><div class="linha">' +
+        Reconhecer.LOJAS_JUR.filter((l) => L[l].length).map((l) => '<button data-rc-loja="' + l + '">⬇ ' + l + ' (' + L[l].length + ')</button>').join('') +
+        (p.meuchat.conversas.length ? '<button data-rc-mc="conversas">⬇ conversas do Meu Chat (' + p.meuchat.conversas.length + ')</button>' : '') +
+        (Object.keys(p.meuchat.codigos).length ? '<button data-rc-mc="codigos">⬇ códigos (' + Object.keys(p.meuchat.codigos).length + ')</button>' : '') +
+        (p.meuchat.memoria ? '<button data-rc-mc="memoria">⬇ memória</button>' : '') +
+        p.outros.map((o, i) => '<button data-rc-out="' + i + '">⬇ ' + E(o.nome) + ' (' + o.linhas.length + ')</button>').join('') + '</div>';
+      if (pai) $('#rc-pai').onclick = () => pai.abrir(r);
+    } catch (e) { $('#rc-res').innerHTML = '<p class="st er">' + E(traduzir(e)) + '</p>'; }
+  };
+  const hoje = () => new Date().toISOString().slice(0, 10);
+  $('#rc-res').addEventListener('click', (e) => {
+    const r = rcUltimo; if (!r) return; const p = r.pacote; const b = e.target.closest('button'); if (!b) return;
+    if (b.id === 'rc-jur') baixar('para-o-sk-juridico-' + hoje() + '.json', JSON.stringify({ app: 'assistente-juridico', versao: 1, criado: new Date().toISOString(), lojas: p.juridico.lojas, prefs: p.juridico.prefs || {} }), 'application/json');
+    if (b.id === 'rc-mc') baixar('para-o-meu-chat-' + hoje() + '.json', JSON.stringify({ app: 'meu-chat', versao: 1, data: new Date().toISOString(), conversas: p.meuchat.conversas, memoria: p.meuchat.memoria, prefs: {}, codigos: p.meuchat.codigos }), 'application/json');
+    if (b.dataset.rcLoja) { const l = b.dataset.rcLoja; const so = Object.fromEntries(Reconhecer.LOJAS_JUR.map((k) => [k, k === l ? p.juridico.lojas[k] : []])); baixar('sk-juridico-' + l + '-' + hoje() + '.json', JSON.stringify({ app: 'assistente-juridico', versao: 1, criado: new Date().toISOString(), lojas: so, prefs: {} }), 'application/json'); }
+    if (b.dataset.rcMc) { const k = b.dataset.rcMc; baixar('meu-chat-' + k + '-' + hoje() + '.json', JSON.stringify({ app: 'meu-chat', versao: 1, data: new Date().toISOString(), conversas: k === 'conversas' ? p.meuchat.conversas : [], memoria: k === 'memoria' ? p.meuchat.memoria : '', prefs: {}, codigos: k === 'codigos' ? p.meuchat.codigos : {} }), 'application/json'); }
+    if (b.dataset.rcOut != null) { const o = p.outros[+b.dataset.rcOut]; baixar(o.nome + '.json', JSON.stringify(o.linhas, null, 1), 'application/json'); }
+  });
+  async function colunasEContagem() {
+    const r = await q("select table_name, column_name, data_type, is_nullable, column_default from information_schema.columns where table_schema = 'public' order by table_name, ordinal_position");
+    const cols = {}; r.forEach((x) => { (cols[x.table_name] = cols[x.table_name] || []).push(x); });
+    const cont = {}; for (const t of Object.keys(cols)) { try { cont[t] = (await q('select count(*)::int as n from ' + nomeSeguro(t)))[0].n; } catch (e) { cont[t] = '?'; } }
+    return { cols, cont };
+  }
+  $('#rc-formato').onclick = async () => {
+    if (!sql) { $('#rc-res').innerHTML = '<p class="st er">Conecte primeiro (🔌 lá em cima).</p>'; return; }
+    try { const { cols, cont } = await colunasEContagem(); baixar('formato-do-banco-' + hoje() + '.md', Reconhecer.formatoMarkdown(cols, cont), 'text/markdown;charset=utf-8'); $('#rc-res').innerHTML = '<p class="st ok">🟢 Formato baixado. Mande este arquivo para qualquer IA antes de pedir tabela nova.</p>'; }
+    catch (e) { $('#rc-res').innerHTML = '<p class="st er">' + E(traduzir(e)) + '</p>'; }
+  };
+  // ---------- 🤖 PEDIR À IA (17/11) ----------
+  // Usa a IA do app onde esta ferramenta está aberta (Mini SK, SK Jurídico). Sem IA por perto: copia o pedido.
+  const SIS = 'Você é o ajudante de BANCO DE DADOS (PostgreSQL, no Neon) de um advogado que NÃO sabe programar e NÃO lê inglês.\n' +
+    'Responda SOMENTE com um JSON, sem nada antes ou depois, neste formato:\n' +
+    '{"explicacao": "em português bem simples, em 1 a 4 frases curtas: o que o comando faz", "sql": "o comando PostgreSQL (pode ter vários, separados por ; e quebra de linha)", "perigo": false}\n' +
+    'Regras:\n- "perigo": true se o comando apaga, zera ou troca dados (drop, delete, truncate, update, alter ... drop/rename/type).\n' +
+    '- Nomes de tabelas e campos em português, minúsculos, sem acento, com _ (ex.: data_audiencia).\n' +
+    '- Tabela nova: sempre "create table if not exists", com "id bigserial primary key" e "criado timestamptz not null default now()".\n' +
+    '- Campo novo: "alter table ... add column if not exists ...".\n- Para consultar, use select com limit 50.\n' +
+    '- Só altere tabelas que existem na lista abaixo. Se o pedido não der para fazer ou não fizer sentido, devolva "sql": "" e explique o porquê.\n' +
+    '- Nunca mexa em tabelas do sistema (pg_*, information_schema) nem em senhas/usuários do banco.\n' +
+    '- A tabela mc_itens é do Meu Chat e do SK Jurídico: não apague nem mude o formato dela.\n' +
+    '- ANTES de criar tabela nova, veja na lista se já existe uma igual ou parecida (mesmo assunto, mesmos campos): se existir, use ela ou só acrescente o campo que falta. Nunca crie tabela duplicada.\n' +
+    '- Siga o jeito das tabelas que já existem (nomes, tipos, datas). Use os exemplos de linha para entender o formato.\n' +
+    '- Para guardar coisas variadas use uma coluna "dados jsonb"; datas em timestamptz; dinheiro em numeric(12,2).';
+  async function esquema() {
+    try {
+      const { cols, cont } = await colunasEContagem();
+      const l = [];
+      for (const [k, v] of Object.entries(cols)) {
+        let ex = ''; try { const sel = v.map((c) => 'left(' + nomeSeguro(c.column_name) + '::text, 80) as ' + nomeSeguro(c.column_name)).join(', '); const e1 = await q('select ' + sel + ' from ' + nomeSeguro(k) + ' limit 1'); if (e1[0]) ex = '\n    exemplo: ' + JSON.stringify(e1[0]).slice(0, 400); } catch (e) {}
+        l.push('- ' + k + ' [' + cont[k] + ' linhas] (' + v.map((c) => c.column_name + ' ' + c.data_type).join(', ') + ')' + ex);
+      }
+      let rec = ''; try { const t = {}; for (const k of Object.keys(cols)) t[k] = (await q('select * from ' + nomeSeguro(k) + ' limit 30')); const r = Reconhecer.detectar({ tabelas: t }, 'banco'); rec = '\nReconhecido: ' + r.formato + '\n' + r.achados.map((a) => '  ' + (a.reconhecido ? '✓ ' : '? ') + a.nome + ': ' + a.detalhe).join('\n'); } catch (e) {}
+      let proj = ''; try { proj = localStorage.getItem('sk:esquemaProjeto') || ''; } catch (e) {}
+      if (proj) proj = '\n\nTabelas que o CÓDIGO do projeto aberto espera (siga EXATAMENTE estes nomes e tipos ao criar):\n' + proj;
+      return (l.length ? l.join('\n') + rec : '(o banco ainda não tem tabelas)') + proj;
+    } catch (e) { return '(não consegui ler as tabelas)'; }
+  }
+  function iaDoApp() {
+    let P = null; try { P = window.parent && window.parent !== window ? window.parent : null; } catch (e) { P = null; }
+    try { if (P && P.SK && P.SK.ai && typeof P.SK.ai.chat === 'function') return { nome: 'IA do Mini SK', fazer: (sis, msg) => P.SK.ai.chat([{ role: 'user', content: msg }], sis, () => {}) }; } catch (e) {}
+    try { if (P && P.J && P.J.ia && typeof P.J.ia.gerar === 'function') return { nome: 'IA do SK Jurídico', fazer: (sis, msg) => P.J.ia.gerar({ mensagens: [{ role: 'user', content: msg }], sistema: sis }) }; } catch (e) {}
+    return null;
+  }
+  function lerJSON(t) {
+    t = String(t || '').replace(/```(?:json)?/gi, '');
+    const a = t.indexOf('{'), b = t.lastIndexOf('}');
+    if (a < 0 || b < a) throw new Error('A IA não respondeu no formato certo. Tente de novo.');
+    const j = JSON.parse(t.slice(a, b + 1));
+    return { explicacao: String(j.explicacao || ''), sql: String(j.sql || '').trim(), perigo: !!j.perigo };
+  }
+  const PERIGOSO = /\b(drop|delete|truncate|update)\b|\balter\s+table\b[\s\S]*\b(drop|rename|type)\b/i;
+  let iaUltimo = null;
+  async function montar(pedido, erroAnterior) {
+    const box = $('#ia-resp');
+    if (!sql) { box.innerHTML = '<p class="st er">Conecte primeiro (🔌 lá em cima).</p>'; return; }
+    pedido = String(pedido || '').trim(); if (!pedido) { box.innerHTML = '<p class="st er">Escreva (ou fale) o que você quer.</p>'; return; }
+    const tabelas = await esquema();
+    let msg = 'Tabelas que já existem no banco:\n' + tabelas + '\n\nPedido: ' + pedido;
+    if (erroAnterior) msg += '\n\nO comando anterior deu ERRO. Comando:\n' + erroAnterior.sql + '\nErro do banco:\n' + erroAnterior.erro + '\nCorrija.';
+    const ia = iaDoApp();
+    if (!ia) {
+      box.innerHTML = '<p class="mut">Aqui não tem IA ligada. Toque em <b>📋 Copiar o pedido</b>, cole na sua IA (Meu Chat, Gemini…) e cole a resposta dela no ▶ Comando (SQL) lá embaixo.</p><div class="linha"><button class="p" id="ia-copiar">📋 Copiar o pedido</button></div>';
+      $('#ia-copiar').onclick = async () => { try { await navigator.clipboard.writeText(SIS + '\n\n' + msg); $('#ia-copiar').textContent = '✅ Copiado'; } catch (e) { prompt('Copie:', SIS + '\n\n' + msg); } };
+      return;
+    }
+    box.innerHTML = '<p class="mut">⏳ A ' + E(ia.nome) + ' está montando…</p>';
+    try {
+      const r = lerJSON(await ia.fazer(SIS, msg));
+      const perigo = r.perigo || PERIGOSO.test(r.sql);
+      iaUltimo = { pedido, sql: r.sql, perigo };
+      box.innerHTML = '<div style="background:var(--bg,#f3f3f3);border-radius:10px;padding:10px;margin-top:8px"><p style="margin:0 0 6px"><b>🧠 O que vai acontecer:</b> ' + E(r.explicacao || '(sem explicação)') + '</p>' +
+        (r.sql ? (perigo ? '<p class="st er" style="margin:6px 0">✋ Este comando APAGA ou MUDA dados: vai pedir CONFIRMO.</p>' : '<p class="st ok" style="margin:6px 0">🛡 Não apaga nada.</p>') +
+          '<textarea id="ia-sql" spellcheck="false" autocapitalize="off" style="min-height:80px">' + E(r.sql) + '</textarea>' +
+          '<div class="linha"><button class="p" id="ia-rodar">▶ Rodar</button><button id="ia-outra">🔁 Pedir de outro jeito</button></div>' : '<p class="mut">A IA não montou comando (veja a explicação).</p>') +
+        '<p id="ia-final" style="margin:6px 0 0"></p></div>';
+      const bR = $('#ia-rodar'); if (bR) bR.onclick = async () => {
+        const texto = $('#ia-sql').value; $('#ia-final').textContent = '⏳ Rodando…';
+        const res = await rodar(texto, !(iaUltimo.perigo || PERIGOSO.test(texto)));
+        if (res && res.ok) { $('#ia-final').innerHTML = '<span class="st ok">✅ Deu certo!</span> ' + (Array.isArray(res.linhas) && res.linhas.length ? 'O resultado está lá embaixo, no ▶ Comando.' : 'A lista de tabelas já foi atualizada.'); }
+        else if (res && res.cancelado) { $('#ia-final').textContent = 'Cancelado. Nada mudou.'; }
+        else { $('#ia-final').innerHTML = '<span class="st er">❌ Deu errado:</span> ' + E(traduzir(res && res.erro)) + ' <button id="ia-corrigir">🤖 Pedir para a IA corrigir</button>'; $('#ia-corrigir').onclick = () => montar(pedido, { sql: texto, erro: res && res.erro }); }
+      };
+      const bO = $('#ia-outra'); if (bO) bO.onclick = () => montar(pedido + '\n(Faça de outro jeito, mais simples.)');
+    } catch (e) { box.innerHTML = '<p class="st er">⚠ ' + E(e.message) + '</p>'; }
+  }
+  $('#ia-montar').onclick = () => montar($('#ia-pedido').value);
+  // 🎤 falar (o reconhecimento de voz do próprio aparelho, em português)
+  $('#ia-voz').onclick = () => {
+    const R = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!R) { alert('Este aparelho não deixa falar aqui. Use o 🎤 do teclado.'); return; }
+    const r = new R(); r.lang = 'pt-BR'; r.interimResults = false; const b = $('#ia-voz'); b.textContent = '🔴 Ouvindo…';
+    r.onresult = (e) => { const t = e.results[0][0].transcript; const a = $('#ia-pedido'); a.value = (a.value ? a.value + ' ' : '') + t; };
+    r.onend = () => { b.textContent = '🎤 Falar'; }; r.onerror = () => { b.textContent = '🎤 Falar'; };
+    try { r.start(); } catch (e) { b.textContent = '🎤 Falar'; }
+  };
+})();
+</script>
+</body>
+</html>

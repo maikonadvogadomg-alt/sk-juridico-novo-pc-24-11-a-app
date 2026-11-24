@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Divisor de HTML</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: Arial, sans-serif;
+  background: #1a1a2e;
+  color: #eee;
+  min-height: 100vh;
+  padding: 20px;
+}
+h1 { text-align: center; color: #00d4ff; margin-bottom: 6px; font-size: 1.4em; }
+.sub { text-align: center; color: #aaa; font-size: 0.85em; margin-bottom: 20px; }
+.card {
+  background: #16213e;
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 16px;
+  border: 1px solid #0f3460;
+}
+.card h2 { color: #00d4ff; font-size: 1em; margin-bottom: 12px; }
+
+#dropZone {
+  border: 2px dashed #00d4ff;
+  border-radius: 10px;
+  padding: 30px;
+  text-align: center;
+  cursor: pointer;
+  background: #0d1b2a;
+  transition: background 0.3s;
+}
+#dropZone:hover, #dropZone.dragover { background: #1a3a5c; }
+#dropZone .icon { font-size: 2.5em; }
+#dropZone p { color: #aaa; font-size: 0.9em; margin-top: 8px; }
+#fileInput { display: none; }
+
+button {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9em;
+  font-weight: bold;
+  transition: opacity 0.2s;
+}
+button:hover { opacity: 0.85; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-blue   { background: #00d4ff; color: #000; }
+.btn-green  { background: #00c853; color: #000; }
+.btn-orange { background: #ff9800; color: #000; }
+.btn-red    { background: #f44336; color: #fff; }
+.btn-roxo   { background: #9c27b0; color: #fff; }
+.btns { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+
+.badge {
+  background: #0f3460;
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 0.8em;
+  color: #00d4ff;
+  display: inline-block;
+}
+.badge-green { background: #1b5e20; color: #69f0ae; }
+.badge-orange { background: #e65100; color: #ffcc80; }
+
+.stats { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+
+.parte-item {
+  background: #0d1b2a;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  border: 1px solid #0f3460;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.parte-nome { color: #00d4ff; font-size: 0.9em; font-weight: bold; }
+.parte-info { color: #aaa; font-size: 0.78em; }
+.parte-preview {
+  background: #0d1b2a;
+  border: 1px solid #0f3460;
+  border-radius: 6px;
+  padding: 8px;
+  font-family: monospace;
+  font-size: 0.75em;
+  color: #69f0ae;
+  margin-top: 6px;
+  max-height: 80px;
+  overflow: hidden;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.opcoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.opcao {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85em;
+  color: #aaa;
+  cursor: pointer;
+}
+.opcao input[type=checkbox] { accent-color: #00d4ff; width: 16px; height: 16px; }
+
+.modo-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.tab {
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1px solid #0f3460;
+  background: transparent;
+  color: #aaa;
+  cursor: pointer;
+  font-size: 0.82em;
+  font-weight: normal;
+}
+.tab.ativo {
+  background: #00d4ff;
+  color: #000;
+  border-color: #00d4ff;
+  font-weight: bold;
+}
+
+.dica {
+  background: #0f3460;
+  border-left: 3px solid #ff9800;
+  padding: 10px 14px;
+  border-radius: 0 8px 8px 0;
+  font-size: 0.82em;
+  color: #aaa;
+  margin-top: 10px;
+}
+.dica strong { color: #ff9800; }
+
+#infoArquivo { display: none; margin-top: 12px; }
+
+#resultBox { display: none; }
+
+.progresso-bar {
+  width: 100%;
+  height: 10px;
+  background: #0f3460;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+.progresso-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00d4ff, #00c853);
+  width: 0%;
+  transition: width 0.3s;
+  border-radius: 10px;
+}
+.progresso-txt {
+  text-align: center;
+  font-size: 0.8em;
+  color: #aaa;
+  margin-top: 6px;
+}
+
+#listaPartes { margin-top: 14px; }
+
+textarea {
+  width: 100%;
+  background: #0d1b2a;
+  color: #eee;
+  border: 1px solid #0f3460;
+  border-radius: 8px;
+  padding: 10px;
+  font-family: monospace;
+  font-size: 0.8em;
+  resize: vertical;
+}
+</style>
+</head>
+<body>
+
+<h1>✂️ Divisor de HTML Gigante</h1>
+<p class="sub">Pega um HTML enorme e separa em partes organizadas — CSS, JS, HTML limpo e seções</p>
+
+<!-- UPLOAD -->
+<div class="card">
+  <h2>📁 1. Carregue o HTML gigante</h2>
+  <div id="dropZone" onclick="document.getElementById('fileInput').click()">
+    <div class="icon">📄</div>
+    <p>Clique aqui ou arraste o arquivo HTML</p>
+    <p style="font-size:0.75em; margin-top:4px;">Funciona com arquivos de qualquer tamanho</p>
+  </div>
+  <input type="file" id="fileInput" accept=".html,.htm">
+
+  <div id="infoArquivo">
+    <div class="stats">
+      <span class="badge" id="badgeNome">Arquivo: --</span>
+      <span class="badge" id="badgeTamanho">Tamanho: --</span>
+      <span class="badge" id="badgeLinhas">Linhas: --</span>
+      <span class="badge" id="badgeEstimativa">Estimativa: --</span>
+    </div>
+  </div>
+</div>
+
+<!-- MODO -->
+<div class="card">
+  <h2>⚙️ 2. Como dividir?</h2>
+  <div class="modo-tabs">
+    <button class="tab ativo" onclick="setModo('auto', this)">🤖 Automático</button>
+    <button class="tab" onclick="setModo('css', this)">🎨 Só CSS</button>
+    <button class="tab" onclick="setModo('js', this)">⚡ Só JS</button>
+    <button class="tab" onclick="setModo('secoes', this)">📑 Por Seções</button>
+    <button class="tab" onclick="setModo('linhas', this)">📏 Por Linhas</button>
+  </div>
+
+  <div id="opcaoLinhas" style="display:none; margin-bottom:12px;">
+    <label style="font-size:0.85em; color:#aaa;">Linhas por parte:</label>
+    <input type="number" id="qtdLinhas" value="500" min="100" max="5000"
+      style="background:#0d1b2a; color:#eee; border:1px solid #0f3460; border-radius:6px; padding:6px 10px; width:100px; margin-left:8px;">
+  </div>
+
+  <div class="opcoes">
+    <label class="opcao">
+      <input type="checkbox" id="optIndexar" checked>
+      Gerar index.html de navegação
+    </label>
+    <label class="opcao">
+      <input type="checkbox" id="optComentarios" checked>
+      Manter comentários originais
+    </label>
+    <label class="opcao">
+      <input type="checkbox" id="optMinInfo" checked>
+      Adicionar info no topo de cada parte
+    </label>
+  </div>
+
+  <div class="dica">
+    <strong>💡 Automático</strong> = detecta e separa CSS, JS e HTML automaticamente.<br>
+    <strong>Por Seções</strong> = divide nos comentários que existem no código.<br>
+    <strong>Por Linhas</strong> = corta em pedaços de X linhas (mais seguro para códigos sem comentários).
+  </div>
+</div>
+
+<!-- PROCESSAR -->
+<div class="card">
+  <h2>🚀 3. Dividir</h2>
+  <div class="btns">
+    <button class="btn-blue" id="btnDividir" onclick="dividir()" disabled>
+      ✂️ Dividir Agora
+    </button>
+    <button class="btn-red" onclick="limpar()">🗑️ Limpar</button>
+  </div>
+  <div class="progresso-bar" id="progBar" style="display:none">
+    <div class="progresso-fill" id="progFill"></div>
+  </div>
+  <div class="progresso-txt" id="progTxt"></div>
+</div>
+
+<!-- RESULTADO -->
+<div class="card" id="resultBox">
+  <h2>✅ 4. Partes geradas</h2>
+  <div class="stats" id="statsResult"></div>
+  <div id="listaPartes"></div>
+  <div class="btns" style="margin-top:14px;">
+    <button class="btn-green" onclick="baixarTodas()">⬇️ Baixar Todas as Partes</button>
+    <button class="btn-orange" onclick="baixarZip()">📦 Baixar como ZIP</button>
+  </div>
+  <div class="dica" style="margin-top:12px;">
+    <strong>💡 Dica:</strong> Depois de dividir, use o <strong>Juntador</strong> para reunir tudo novamente quando quiser.
+  </div>
+</div>
+
+<script>
+let conteudoHTML = '';
+let nomeArquivo = '';
+let modoAtual = 'auto';
+let partesGeradas = [];
+
+// UPLOAD
+document.getElementById('fileInput').addEventListener('change', e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  nomeArquivo = f.name;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    conteudoHTML = ev.target.result;
+    const linhas = conteudoHTML.split('\n').length;
+    document.getElementById('badgeNome').textContent = `Arquivo: ${f.name}`;
+    document.getElementById('badgeTamanho').textContent = `Tamanho: ${formatBytes(f.size)}`;
+    document.getElementById('badgeLinhas').textContent = `Linhas: ${linhas.toLocaleString()}`;
+    document.getElementById('badgeEstimativa').textContent = `Estimativa: ~${estimarPartes(linhas)} partes`;
+    document.getElementById('infoArquivo').style.display = 'block';
+    document.getElementById('btnDividir').disabled = false;
+    document.getElementById('resultBox').style.display = 'none';
+  };
+  reader.readAsText(f, 'UTF-8');
+});
+
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (f) {
+    document.getElementById('fileInput').files;
+    // simular
+    nomeArquivo = f.name;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      conteudoHTML = ev.target.result;
+      const linhas = conteudoHTML.split('\n').length;
+      document.getElementById('badgeNome').textContent = `Arquivo: ${f.name}`;
+      document.getElementById('badgeTamanho').textContent = `Tamanho: ${formatBytes(f.size)}`;
+      document.getElementById('badgeLinhas').textContent = `Linhas: ${linhas.toLocaleString()}`;
+      document.getElementById('badgeEstimativa').textContent = `Estimativa: ~${estimarPartes(linhas)} partes`;
+      document.getElementById('infoArquivo').style.display = 'block';
+      document.getElementById('btnDividir').disabled = false;
+    };
+    reader.readAsText(f, 'UTF-8');
+  }
+});
+
+function estimarPartes(linhas) {
+  return Math.ceil(linhas / 500) + 2;
+}
+
+function setModo(modo, btn) {
+  modoAtual = modo;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('ativo'));
+  btn.classList.add('ativo');
+  document.getElementById('opcaoLinhas').style.display = modo === 'linhas' ? 'block' : 'none';
+}
+
+function setProgresso(pct, txt) {
+  document.getElementById('progBar').style.display = 'block';
+  document.getElementById('progFill').style.width = pct + '%';
+  document.getElementById('progTxt').textContent = txt;
+}
+
+async function dividir() {
+  if (!conteudoHTML) return;
+  document.getElementById('btnDividir').disabled = true;
+  document.getElementById('resultBox').style.display = 'none';
+  partesGeradas = [];
+
+  setProgresso(10, 'Analisando arquivo...');
+  await sleep(50);
+
+  if (modoAtual === 'auto')    await dividirAuto();
+  else if (modoAtual === 'css')    await dividirSoCSS();
+  else if (modoAtual === 'js')     await dividirSoJS();
+  else if (modoAtual === 'secoes') await dividirSecoes();
+  else if (modoAtual === 'linhas') await dividirLinhas();
+
+  // Gerar index se pedido
+  if (document.getElementById('optIndexar').checked) {
+    gerarIndex();
+  }
+
+  setProgresso(100, `✅ ${partesGeradas.length} partes geradas!`);
+  mostrarResultado();
+  document.getElementById('btnDividir').disabled = false;
+}
+
+// ===== MODO AUTOMÁTICO =====
+async function dividirAuto() {
+  setProgresso(20, 'Extraindo CSS...');
+  await sleep(30);
+
+  const cssBlocks = [];
+  const jsBlocks = [];
+  let htmlLimpo = conteudoHTML;
+
+  // Extrair blocos <style>
+  const regexStyle = /<style[^>]*>([\s\S]*?)<\/style>/gi;
+  let matchCSS;
+  let cssTotal = '';
+  while ((matchCSS = regexStyle.exec(conteudoHTML)) !== null) {
+    cssTotal += matchCSS[1] + '\n\n';
+  }
+  if (cssTotal.trim()) {
+    partesGeradas.push({
+      nome: 'estilos.css',
+      tipo: 'CSS',
+      conteudo: gerarCabecalho('estilos.css', 'CSS extraído automaticamente') + cssTotal,
+      linhas: cssTotal.split('\n').length
+    });
+    htmlLimpo = htmlLimpo.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '<!-- [CSS movido para estilos.css] -->');
+  }
+
+  setProgresso(40, 'Extraindo JavaScript...');
+  await sleep(30);
+
+  // Extrair blocos <script> sem src
+  const regexScript = /<script(?![^>]*src)[^>]*>([\s\S]*?)<\/script>/gi;
+  let matchJS;
+  let jsTotal = '';
+  while ((matchJS = regexScript.exec(conteudoHTML)) !== null) {
+    if (matchJS[1].trim()) jsTotal += matchJS[1] + '\n\n';
+  }
+  if (jsTotal.trim()) {
+    partesGeradas.push({
+      nome: 'codigo.js',
+      tipo: 'JS',
+      conteudo: gerarCabecalho('codigo.js', 'JavaScript extraído automaticamente') + jsTotal,
+      linhas: jsTotal.split('\n').length
+    });
+    htmlLimpo = htmlLimpo.replace(/<script(?![^>]*src)[^>]*>[\s\S]*?<\/script>/gi, '<!-- [JS movido para codigo.js] -->');
+  }
+
+  setProgresso(60, 'Organizando HTML...');
+  await sleep(30);
+
+  // HTML limpo
+  partesGeradas.push({
+    nome: 'estrutura.html',
+    tipo: 'HTML',
+    conteudo: gerarCabecalho('estrutura.html', 'HTML estrutural — CSS e JS foram separados') + htmlLimpo,
+    linhas: htmlLimpo.split('\n').length
+  });
+
+  // Se HTML ainda for grande, dividir por seções também
+  const linhasHTML = htmlLimpo.split('\n').length;
+  if (linhasHTML > 800) {
+    setProgresso(75, 'HTML ainda grande, dividindo por seções...');
+    await sleep(30);
+    await dividirHTMLporSecoes(htmlLimpo);
+  }
+}
+
+// ===== SÓ CSS =====
+async function dividirSoCSS() {
+  setProgresso(30, 'Extraindo CSS...');
+  const regexStyle = /<style[^>]*>([\s\S]*?)<\/style>/gi;
+  let match; let i = 1;
+  while ((match = regexStyle.exec(conteudoHTML)) !== null) {
+    const conteudo = match[1].trim();
+    if (conteudo) {
+      partesGeradas.push({
+        nome: `estilo_${i}.css`,
+        tipo: 'CSS',
+        conteudo: gerarCabecalho(`estilo_${i}.css`, `Bloco CSS #${i}`) + conteudo,
+        linhas: conteudo.split('\n').length
+      });
+      i++;
+    }
+  }
+  setProgresso(80, 'Finalizando...');
+  if (partesGeradas.length === 0) {
+    alert('Nenhum bloco CSS encontrado no arquivo.');
+  }
+}
+
+// ===== SÓ JS =====
+async function dividirSoJS() {
+  setProgresso(30, 'Extraindo JavaScript...');
+  const regexScript = /<script(?![^>]*src)[^>]*>([\s\S]*?)<\/script>/gi;
+  let match; let i = 1;
+  while ((match = regexScript.exec(conteudoHTML)) !== null) {
+    const conteudo = match[1].trim();
+    if (conteudo) {
+      partesGeradas.push({
+        nome: `script_${i}.js`,
+        tipo: 'JS',
+        conteudo: gerarCabecalho(`script_${i}.js`, `Bloco JS #${i}`) + conteudo,
+        linhas: conteudo.split('\n').length
+      });
+      i++;
+    }
+  }
+  setProgresso(80, 'Finalizando...');
+  if (partesGeradas.length === 0) {
+    alert('Nenhum bloco JavaScript encontrado.');
+  }
+}
+
+// ===== POR SEÇÕES (comentários) =====
+async function dividirSecoes() {
+  setProgresso(20, 'Procurando seções por comentários...');
+  const linhas = conteudoHTML.split('\n');
+  const secoes = [];
+  let secaoAtual = { nome: 'inicio', linhas: [] };
+
+  for (const linha of linhas) {
+    const match = linha.match(/<!--\s*[=\-*]{3,}\s*(.*?)\s*[=\-*]{0,}\s*-->/i);
+    if (match && match[1].trim()) {
+      if (secaoAtual.linhas.length > 0) secoes.push(secaoAtual);
+      secaoAtual = { nome: match[1].trim().replace(/[^a-z0-9\s]/gi,'').trim().replace(/\s+/g,'_').toLowerCase(), linhas: [] };
+    }
+    secaoAtual.linhas.push(linha);
+  }
+  if (secaoAtual.linhas.length > 0) secoes.push(secaoAtual);
+
+  setProgresso(60, `${secoes.length} seções encontradas...`);
+
+  secoes.forEach((s, i) => {
+    const conteudo = s.linhas.join('\n');
+    partesGeradas.push({
+      nome: `secao_${i+1}_${s.nome || 'parte'}.html`,
+      tipo: 'HTML',
+      conteudo: gerarCabecalho(`secao_${i+1}`, `Seção: ${s.nome}`) + conteudo,
+      linhas: s.linhas.length
+    });
+  });
+
+  if (secoes.length <= 1) {
+    alert('Poucos comentários de seção encontrados. Tente o modo "Por Linhas".');
+  }
+}
+
+// ===== POR LINHAS =====
+async function dividirLinhas() {
+  const qtd = parseInt(document.getElementById('qtdLinhas').value) || 500;
+  const linhas = conteudoHTML.split('\n');
+  const total = linhas.length;
+  const numPartes = Math.ceil(total / qtd);
+
+  setProgresso(20, `Dividindo em ${numPartes} partes de ${qtd} linhas...`);
+
+  for (let i = 0; i < numPartes; i++) {
+    const inicio = i * qtd;
+    const fim = Math.min(inicio + qtd, total);
+    const bloco = linhas.slice(inicio, fim).join('\n');
+    const pct = Math.round(((i+1)/numPartes)*80) + 10;
+    setProgresso(pct, `Parte ${i+1} de ${numPartes}...`);
+    await sleep(10);
+    partesGeradas.push({
+      nome: `parte_${String(i+1).padStart(2,'0')}_linhas_${inicio+1}_${fim}.html`,
+      tipo: 'HTML',
+      conteudo: gerarCabecalho(`Parte ${i+1}/${numPartes}`, `Linhas ${inicio+1} até ${fim} de ${total}`) + bloco,
+      linhas: fim - inicio
+    });
+  }
+}
+
+// ===== DIVIDIR HTML POR SEÇÕES INTERNAS =====
+async function dividirHTMLporSecoes(html) {
+  const linhas = html.split('\n');
+  const blocos = [];
+  let bloco = [];
+  let i = 0;
+
+  for (const linha of linhas) {
+    bloco.push(linha);
+    if (bloco.length >= 600) {
+      blocos.push(bloco.join('\n'));
+      bloco = [];
+      i++;
+    }
+  }
+  if (bloco.length > 0) blocos.push(bloco.join('\n'));
+
+  blocos.forEach((b, idx) => {
+    partesGeradas.push({
+      nome: `html_parte_${idx+1}.html`,
+      tipo: 'HTML',
+      conteudo: gerarCabecalho(`html_parte_${idx+1}`, `HTML parte ${idx+1} de ${blocos.length}`) + b,
+      linhas: b.split('\n').length
+    });
+  });
+}
+
+// ===== GERAR INDEX =====
+function gerarIndex() {
+  const lista = partesGeradas.map(p => `
+    <div class="item">
+      <span class="tipo tipo-${p.tipo.toLowerCase()}">${p.tipo}</span>
+      <span class="nome">${p.nome}</span>
+      <span class="info">${p.linhas.toLocaleString()} linhas</span>
+    </div>`).join('');
+
+  const index = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Índice — ${nomeArquivo}</title>
+<style>
+body { font-family: Arial; background: #1a1a2e; color: #eee; padding: 20px; }
+h1 { color: #00d4ff; margin-bottom: 16px; }
+.item { background: #16213e; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.tipo { border-radius: 12px; padding: 3px 10px; font-size: 0.8em; font-weight: bold; }
+.tipo-css { background: #1565c0; color: #90caf9; }
+.tipo-js { background: #e65100; color: #ffcc80; }
+.tipo-html { background: #1b5e20; color: #69f0ae; }
+.nome { color: #00d4ff; font-size: 0.9em; }
+.info { color: #aaa; font-size: 0.8em; margin-left: auto; }
+</style>
+</head>
+<body>
+<h1>📋 Índice do Projeto: ${nomeArquivo}</h1>
+<p style="color:#aaa; margin-bottom:16px; font-size:0.85em;">Gerado em: ${new Date().toLocaleString('pt-BR')} — ${partesGeradas.length} arquivos</p>
+${lista}
+</body>
+</html>`;
+
+  partesGeradas.unshift({
+    nome: 'INDEX.html',
+    tipo: 'HTML',
+    conteudo: index,
+    linhas: index.split('\n').length
+  });
+}
+
+// ===== MOSTRAR RESULTADO =====
+function mostrarResultado() {
+  const totalLinhas = partesGeradas.reduce((a, p) => a + p.linhas, 0);
+  document.getElementById('statsResult').innerHTML = `
+    <span class="badge">${partesGeradas.length} arquivos</span>
+    <span class="badge">${totalLinhas.toLocaleString()} linhas total</span>
+    <span class="badge badge-green">Pronto para baixar</span>
+  `;
+
+  document.getElementById('listaPartes').innerHTML = partesGeradas.map((p, i) => `
+    <div class="parte-item">
+      <div>
+        <div class="parte-nome">${getIconeTipo(p.tipo)} ${p.nome}</div>
+        <div class="parte-info">${p.linhas.toLocaleString()} linhas • ${formatBytes(new Blob([p.conteudo]).size)}</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-blue" style="padding:6px 12px; font-size:0.8em;" onclick="baixarUma(${i})">⬇️ Baixar</button>
+        <button class="btn-orange" style="padding:6px 12px; font-size:0.8em;" onclick="verPreview(${i})">👁️ Ver</button>
+      </div>
+    </div>
+    <div id="preview_${i}" style="display:none; margin-bottom:8px;">
+      <textarea style="min-height:120px; font-size:0.75em;">${escapeHTML(p.conteudo.substring(0,800))}${p.conteudo.length > 800 ? '\n... (truncado para preview)' : ''}</textarea>
+    </div>
+  `).join('');
+
+  document.getElementById('resultBox').style.display = 'block';
+}
+
+function verPreview(i) {
+  const el = document.getElementById(`preview_${i}`);
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function baixarUma(i) {
+  const p = partesGeradas[i];
+  const blob = new Blob([p.conteudo], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = p.nome;
+  a.click();
+}
+
+function baixarTodas() {
+  partesGeradas.forEach((p, i) => {
+    setTimeout(() => baixarUma(i), i * 300);
+  });
+}
+
+async function baixarZip() {
+  // ZIP simples sem biblioteca externa — baixa todas sequencialmente
+  alert(`Serão baixados ${partesGeradas.length} arquivos. Permita múltiplos downloads no navegador.`);
+  baixarTodas();
+}
+
+function gerarCabecalho(nome, descricao) {
+  if (!document.getElementById('optMinInfo').checked) return '';
+  return `<!-- 
+  ================================================
+  ARQUIVO: ${nome}
+  DESCRIÇÃO: ${descricao}
+  GERADO: ${new Date().toLocaleString('pt-BR')}
+  ORIGEM: ${nomeArquivo}
+  ================================================
+-->\n\n`;
+}
+
+function getIconeTipo(tipo) {
+  if (tipo === 'CSS') return '🎨';
+  if (tipo === 'JS') return '⚡';
+  return '🌐';
+}
+
+function escapeHTML(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function limpar() {
+  conteudoHTML = '';
+  nomeArquivo = '';
+  partesGeradas = [];
+  document.getElementById('infoArquivo').style.display = 'none';
+  document.getElementById('resultBox').style.display = 'none';
+  document.getElementById('fileInput').value = '';
+  document.getElementById('btnDividir').disabled = true;
+  document.getElementById('progBar').style.display = 'none';
+  document.getElementById('progTxt').textContent = '';
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/1048576).toFixed(1) + ' MB';
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+</body>
+</html>

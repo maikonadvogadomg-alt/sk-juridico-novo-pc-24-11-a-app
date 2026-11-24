@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Procurar e Substituir</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 16px;
+    font-size: 16px;
+  }
+  h1 {
+    text-align: center;
+    color: #7c3aed;
+    font-size: 1.4rem;
+    margin-bottom: 4px;
+  }
+  .subtitulo {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.85rem;
+    margin-bottom: 20px;
+  }
+
+  /* ABAS */
+  .abas {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+  .aba {
+    flex: 1;
+    padding: 10px 8px;
+    background: #1e293b;
+    border: 2px solid #334155;
+    border-radius: 10px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 0.82rem;
+    color: #94a3b8;
+    transition: all 0.2s;
+  }
+  .aba.ativa {
+    background: #7c3aed;
+    border-color: #7c3aed;
+    color: white;
+    font-weight: bold;
+  }
+
+  .secao { display: none; }
+  .secao.visivel { display: block; }
+
+  /* CARD */
+  .card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .card-titulo {
+    font-weight: bold;
+    color: #c4b5fd;
+    margin-bottom: 12px;
+    font-size: 1rem;
+  }
+
+  /* INPUTS */
+  label {
+    display: block;
+    font-size: 0.82rem;
+    color: #94a3b8;
+    margin-bottom: 4px;
+    margin-top: 10px;
+  }
+  input[type="text"] {
+    width: 100%;
+    background: #0f172a;
+    border: 2px solid #334155;
+    border-radius: 8px;
+    color: #e2e8f0;
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border 0.2s;
+  }
+  input[type="text"]:focus { border-color: #7c3aed; }
+
+  textarea {
+    width: 100%;
+    background: #0f172a;
+    border: 2px solid #334155;
+    border-radius: 8px;
+    color: #e2e8f0;
+    padding: 10px 12px;
+    font-size: 0.82rem;
+    font-family: monospace;
+    outline: none;
+    resize: vertical;
+    transition: border 0.2s;
+    min-height: 180px;
+  }
+  textarea:focus { border-color: #7c3aed; }
+
+  /* BOTÕES */
+  .btn {
+    display: inline-block;
+    padding: 12px 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: bold;
+    transition: all 0.2s;
+    margin: 4px 4px 4px 0;
+  }
+  .btn-roxo { background: #7c3aed; color: white; }
+  .btn-roxo:hover { background: #6d28d9; }
+  .btn-verde { background: #16a34a; color: white; }
+  .btn-verde:hover { background: #15803d; }
+  .btn-azul { background: #0369a1; color: white; }
+  .btn-azul:hover { background: #075985; }
+  .btn-cinza { background: #334155; color: #94a3b8; }
+  .btn-cinza:hover { background: #475569; }
+  .btn-vermelho { background: #dc2626; color: white; }
+  .btn-vermelho:hover { background: #b91c1c; }
+
+  /* RESULTADO */
+  .resultado-box {
+    background: #0f172a;
+    border: 2px solid #22c55e;
+    border-radius: 10px;
+    padding: 12px;
+    margin-top: 12px;
+    display: none;
+  }
+  .resultado-box.visivel { display: block; }
+  .resultado-info {
+    font-size: 0.85rem;
+    color: #86efac;
+    margin-bottom: 8px;
+    font-weight: bold;
+  }
+
+  /* DESTAQUE */
+  .destaque {
+    background: #0f172a;
+    border-left: 4px solid #7c3aed;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin: 8px 0;
+    font-size: 0.85rem;
+  }
+  .destaque.verde { border-left-color: #22c55e; }
+  .destaque.amarelo { border-left-color: #f59e0b; }
+  .destaque.vermelho { border-left-color: #ef4444; }
+
+  /* ATALHOS RÁPIDOS */
+  .atalhos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 10px 0;
+  }
+  .atalho {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    color: #94a3b8;
+    transition: all 0.2s;
+  }
+  .atalho:hover {
+    border-color: #7c3aed;
+    color: #c4b5fd;
+    background: #1e1b4b;
+  }
+  .atalho strong { color: #c4b5fd; display: block; margin-bottom: 2px; }
+
+  /* CONTADOR */
+  .contador {
+    display: inline-block;
+    background: #7c3aed;
+    color: white;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin-left: 8px;
+  }
+
+  /* HISTÓRICO */
+  .historico-item {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 8px;
+    font-size: 0.82rem;
+  }
+  .historico-de { color: #f87171; }
+  .historico-para { color: #86efac; }
+  .historico-qtd { color: #94a3b8; font-size: 0.75rem; margin-top: 4px; }
+
+  /* ALERTA */
+  .alerta {
+    background: #1c1917;
+    border: 1px solid #f59e0b;
+    border-radius: 10px;
+    padding: 12px;
+    margin: 10px 0;
+    font-size: 0.85rem;
+    color: #fcd34d;
+  }
+
+  /* MÚLTIPLAS SUBSTITUIÇÕES */
+  .multi-linha {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  .multi-linha input {
+    flex: 1;
+    min-width: 120px;
+  }
+  .multi-linha .seta {
+    color: #7c3aed;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+  .btn-remover {
+    background: #dc2626;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+
+  .rodape {
+    text-align: center;
+    font-size: 0.75rem;
+    color: #475569;
+    margin-top: 20px;
+    padding-top: 12px;
+    border-top: 1px solid #1e293b;
+  }
+</style>
+</head>
+<body>
+
+<h1>🔍 Procurar e Substituir</h1>
+<p class="subtitulo">Cole qualquer código — HTML, JS, JSON — e troque o que precisar</p>
+
+<!-- ABAS -->
+<div class="abas">
+  <div class="aba ativa" onclick="trocarAba('simples', this)">🔄 Simples</div>
+  <div class="aba" onclick="trocarAba('multiplo', this)">📋 Múltiplos</div>
+  <div class="aba" onclick="trocarAba('historico', this)">🕐 Histórico</div>
+  <div class="aba" onclick="trocarAba('ajuda', this)">❓ Ajuda</div>
+</div>
+
+<!-- ===== ABA SIMPLES ===== -->
+<div id="simples" class="secao visivel">
+
+  <div class="card">
+    <div class="card-titulo">⚡ Atalhos rápidos — clique para preencher</div>
+    <div class="atalhos">
+      <div class="atalho" onclick="preencherAtalho('AIzaSy', 'SUA_CHAVE_AQ_AQUI')">
+        <strong>🔑 Chave Gemini</strong>
+        AIzaSy → AQ.Ab...
+      </div>
+      <div class="atalho" onclick="preencherAtalho('gemini-pro', 'gemini-2.5-flash')">
+        <strong>🤖 Modelo Gemini</strong>
+        gemini-pro → 2.5-flash
+      </div>
+      <div class="atalho" onclick="preencherAtalho('gemini-1.5-pro', 'gemini-2.5-pro')">
+        <strong>🤖 Modelo Pro</strong>
+        1.5-pro → 2.5-pro
+      </div>
+      <div class="atalho" onclick="preencherAtalho('https://generativelanguage.googleapis.com', 'https://openapi.monica.im/v1')">
+        <strong>🌐 URL Google→Monica</strong>
+        googleapis → Monica
+      </div>
+      <div class="atalho" onclick="preencherAtalho('claude-3-haiku', 'claude-haiku-4-5')">
+        <strong>🤖 Claude Haiku</strong>
+        3-haiku → haiku-4-5
+      </div>
+      <div class="atalho" onclick="preencherAtalho('claude-3-sonnet', 'claude-sonnet-4-5')">
+        <strong>🤖 Claude Sonnet</strong>
+        3-sonnet → sonnet-4-5
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-titulo">🔍 Substituição</div>
+
+    <label>📥 Cole o código aqui:</label>
+    <textarea id="codigo-entrada" placeholder="Cole aqui o código HTML, JavaScript, JSON ou qualquer texto..."></textarea>
+
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;">
+      <div style="flex:1; min-width:140px;">
+        <label>🔴 Procurar:</label>
+        <input type="text" id="procurar" placeholder="Ex: AIzaSy">
+      </div>
+      <div style="flex:1; min-width:140px;">
+        <label>🟢 Substituir por:</label>
+        <input type="text" id="substituir" placeholder="Ex: AQ.Ab...">
+      </div>
+    </div>
+
+    <div style="margin-top:6px;">
+      <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer;">
+        <input type="checkbox" id="case-sensitive" style="width:16px;height:16px;">
+        <span>Diferenciar maiúsculas/minúsculas</span>
+      </label>
+    </div>
+
+    <div style="margin-top:12px;">
+      <button class="btn btn-roxo" onclick="fazerSubstituicao()">🔄 Substituir tudo</button>
+      <button class="btn btn-azul" onclick="contarOcorrencias()">🔢 Contar quantas vezes aparece</button>
+      <button class="btn btn-cinza" onclick="limparTudo()">🗑️ Limpar tudo</button>
+    </div>
+
+    <div id="resultado-simples" class="resultado-box">
+      <div class="resultado-info" id="resultado-info-texto"></div>
+      <label>📤 Código corrigido:</label>
+      <textarea id="codigo-saida" readonly style="min-height:180px; border-color:#22c55e;"></textarea>
+      <div style="margin-top:8px;">
+        <button class="btn btn-verde" onclick="copiarResultado()">📋 Copiar código corrigido</button>
+        <button class="btn btn-azul" onclick="usarComoEntrada()">♻️ Usar como nova entrada</button>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ===== ABA MÚLTIPLOS ===== -->
+<div id="multiplo" class="secao">
+
+  <div class="card">
+    <div class="card-titulo">📋 Várias substituições de uma vez</div>
+    <p style="font-size:0.85rem; color:#94a3b8; margin-bottom:12px;">
+      Útil quando precisa trocar várias coisas ao mesmo tempo no mesmo código.
+    </p>
+
+    <label>📥 Cole o código aqui:</label>
+    <textarea id="codigo-multi" placeholder="Cole o código aqui..."></textarea>
+
+    <div style="margin-top:12px; margin-bottom:8px;">
+      <strong style="color:#c4b5fd; font-size:0.9rem;">Pares de substituição:</strong>
+    </div>
+
+    <div id="lista-pares">
+      <!-- pares adicionados dinamicamente -->
+    </div>
+
+    <button class="btn btn-cinza" onclick="adicionarPar()" style="margin-top:4px;">➕ Adicionar mais um par</button>
+
+    <div style="margin-top:12px;">
+      <button class="btn btn-roxo" onclick="fazerMultiplo()">🔄 Substituir tudo</button>
+      <button class="btn btn-cinza" onclick="limparMultiplo()">🗑️ Limpar</button>
+    </div>
+
+    <div id="resultado-multi" class="resultado-box">
+      <div class="resultado-info" id="resultado-multi-info"></div>
+      <label>📤 Código corrigido:</label>
+      <textarea id="codigo-multi-saida" readonly style="min-height:180px; border-color:#22c55e;"></textarea>
+      <div style="margin-top:8px;">
+        <button class="btn btn-verde" onclick="copiarMulti()">📋 Copiar código corrigido</button>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ===== ABA HISTÓRICO ===== -->
+<div id="historico" class="secao">
+
+  <div class="card">
+    <div class="card-titulo">🕐 Histórico de substituições</div>
+    <p style="font-size:0.85rem; color:#94a3b8; margin-bottom:12px;">
+      Registro das últimas substituições feitas nesta sessão.
+    </p>
+    <div id="lista-historico">
+      <div style="color:#475569; font-size:0.85rem; text-align:center; padding:20px;">
+        Nenhuma substituição feita ainda.
+      </div>
+    </div>
+    <button class="btn btn-vermelho" onclick="limparHistorico()" style="margin-top:8px;">🗑️ Limpar histórico</button>
+  </div>
+
+</div>
+
+<!-- ===== ABA AJUDA ===== -->
+<div id="ajuda" class="secao">
+
+  <div class="card">
+    <div class="card-titulo">❓ Como usar</div>
+
+    <div class="destaque verde">
+      <strong>✅ Para trocar a chave do Gemini:</strong><br>
+      1. Cole o código na caixa grande<br>
+      2. Clique no atalho "🔑 Chave Gemini"<br>
+      3. No campo "Substituir por" coloque sua nova chave AQ.Ab...<br>
+      4. Clique "Substituir tudo"<br>
+      5. Copie o resultado
+    </div>
+
+    <div class="destaque">
+      <strong>🔄 Para trocar o modelo:</strong><br>
+      1. Cole o código<br>
+      2. Clique no atalho do modelo que quer trocar<br>
+      3. Clique "Substituir tudo"<br>
+      4. Copie o resultado
+    </div>
+
+    <div class="destaque amarelo">
+      <strong>⚠️ Cuidado com maiúsculas:</strong><br>
+      Por padrão não diferencia maiúsculas. Se precisar diferenciar, marque a caixinha.
+    </div>
+
+    <div class="destaque amarelo">
+      <strong>⚠️ Projetos da Replit (index/boot):</strong><br>
+      Funciona da mesma forma! Cole o conteúdo do arquivo, faça a substituição e copie de volta. Funciona para qualquer arquivo de texto.
+    </div>
+
+    <div class="destaque vermelho">
+      <strong>🔴 Não funciona para:</strong><br>
+      Arquivos binários (imagens, APK compilado). Só funciona em arquivos de texto.
+    </div>
+
+  </div>
+
+  <div class="card">
+    <div class="card-titulo">🔑 Mudanças comuns do Gemini</div>
+    <table style="width:100%; border-collapse:collapse; font-size:0.82rem;">
+      <tr style="background:#7c3aed;">
+        <th style="padding:8px; text-align:left; color:white;">Procurar</th>
+        <th style="padding:8px; text-align:left; color:white;">Substituir por</th>
+        <th style="padding:8px; text-align:left; color:white;">Por quê</th>
+      </tr>
+      <tr>
+        <td style="padding:8px; border-bottom:1px solid #334155; color:#f87171;">AIzaSy...</td>
+        <td style="padding:8px; border-bottom:1px solid #334155; color:#86efac;">AQ.Ab... (sua chave nova)</td>
+        <td style="padding:8px; border-bottom:1px solid #334155; color:#94a3b8;">Chave mudou</td>
+      </tr>
+      <tr style="background:#0f172a;">
+        <td style="padding:8px; border-bottom:1px solid #334155; color:#f87171;">gemini-pro</td>
+        <td style="padding:8px; border-bottom:1px solid #334155; color:#86efac;">gemini-2.5-flash</td>
+        <td style="padding:8px; border-bottom:1px solid #334155; color:#94a3b8;">Modelo antigo</td>
+      </tr>
+      <tr>
+        <td style="padding:8px; border-bottom:1px solid #334155; color:#f87171;">gemini-1.5-pro</td>
+        <td style="padding:8px; border-bottom:1px solid #334155; color:#86efac;">gemini-2.5-pro</td>
+        <td style="padding:8px; border-bottom:1px solid #334155; color:#94a3b8;">Modelo antigo</td>
+      </tr>
+      <tr style="background:#0f172a;">
+        <td style="padding:8px; color:#f87171;">gemini-1.5-flash</td>
+        <td style="padding:8px; color:#86efac;">gemini-2.5-flash</td>
+        <td style="padding:8px; color:#94a3b8;">Modelo antigo</td>
+      </tr>
+    </table>
+  </div>
+
+</div>
+
+<div class="rodape">Procurar e Substituir · Monica AI · Novembro 2026</div>
+
+<script>
+  // ===== HISTÓRICO =====
+  let historico = [];
+
+  // ===== ABAS =====
+  function trocarAba(id, el) {
+    document.querySelectorAll('.secao').forEach(s => s.classList.remove('visivel'));
+    document.querySelectorAll('.aba').forEach(a => a.classList.remove('ativa'));
+    document.getElementById(id).classList.add('visivel');
+    el.classList.add('ativa');
+  }
+
+  // ===== ATALHOS =====
+  function preencherAtalho(de, para) {
+    document.getElementById('procurar').value = de;
+    document.getElementById('substituir').value = para;
+    // Vai para aba simples
+    document.querySelectorAll('.secao').forEach(s => s.classList.remove('visivel'));
+    document.querySelectorAll('.aba').forEach(a => a.classList.remove('ativa'));
+    document.getElementById('simples').classList.add('visivel');
+    document.querySelectorAll('.aba')[0].classList.add('ativa');
+    document.getElementById('procurar').focus();
+  }
+
+  // ===== CONTAR =====
+  function contarOcorrencias() {
+    const codigo = document.getElementById('codigo-entrada').value;
+    const procurar = document.getElementById('procurar').value;
+    const caseSensitive = document.getElementById('case-sensitive').checked;
+
+    if (!codigo.trim()) { alert('Cole o código primeiro!'); return; }
+    if (!procurar.trim()) { alert('Digite o que quer procurar!'); return; }
+
+    const flags = caseSensitive ? 'g' : 'gi';
+    const regex = new RegExp(escapeRegex(procurar), flags);
+    const matches = codigo.match(regex);
+    const qtd = matches ? matches.length : 0;
+
+    alert(`"${procurar}" aparece ${qtd} vez(es) no código.`);
+  }
+
+  // ===== SUBSTITUIÇÃO SIMPLES =====
+  function fazerSubstituicao() {
+    const codigo = document.getElementById('codigo-entrada').value;
+    const procurar = document.getElementById('procurar').value;
+    const substituir = document.getElementById('substituir').value;
+    const caseSensitive = document.getElementById('case-sensitive').checked;
+
+    if (!codigo.trim()) { alert('Cole o código primeiro!'); return; }
+    if (!procurar.trim()) { alert('Digite o que quer procurar!'); return; }
+
+    const flags = caseSensitive ? 'g' : 'gi';
+    const regex = new RegExp(escapeRegex(procurar), flags);
+    const matches = codigo.match(regex);
+    const qtd = matches ? matches.length : 0;
+
+    if (qtd === 0) {
+      alert(`"${procurar}" não foi encontrado no código.\n\nVerifique se está escrito certo.`);
+      return;
+    }
+
+    const resultado = codigo.replace(regex, substituir);
+
+    document.getElementById('codigo-saida').value = resultado;
+    document.getElementById('resultado-info-texto').innerHTML =
+      `✅ Substituído <strong>${qtd}</strong> ocorrência(s) de "<span style="color:#f87171">${procurar}</span>" por "<span style="color:#86efac">${substituir || '(vazio)'}</span>"`;
+    document.getElementById('resultado-simples').classList.add('visivel');
+
+    // Salva no histórico
+    historico.unshift({ de: procurar, para: substituir, qtd: qtd, hora: new Date().toLocaleTimeString('pt-BR') });
+    if (historico.length > 20) historico.pop();
+    atualizarHistorico();
+  }
+
+  // ===== COPIAR =====
+  function copiarResultado() {
+    const texto = document.getElementById('codigo-saida').value;
+    navigator.clipboard.writeText(texto).then(() => {
+      alert('✅ Código copiado! Agora cole onde precisar.');
+    }).catch(() => {
+      document.getElementById('codigo-saida').select();
+      document.execCommand('copy');
+      alert('✅ Código copiado!');
+    });
+  }
+
+  function copiarMulti() {
+    const texto = document.getElementById('codigo-multi-saida').value;
+    navigator.clipboard.writeText(texto).then(() => {
+      alert('✅ Código copiado!');
+    }).catch(() => {
+      document.getElementById('codigo-multi-saida').select();
+      document.execCommand('copy');
+      alert('✅ Código copiado!');
+    });
+  }
+
+  // ===== USAR COMO ENTRADA =====
+  function usarComoEntrada() {
+    const resultado = document.getElementById('codigo-saida').value;
+    document.getElementById('codigo-entrada').value = resultado;
+    document.getElementById('resultado-simples').classList.remove('visivel');
+    document.getElementById('codigo-saida').value = '';
+    alert('✅ Pronto! O resultado virou a nova entrada. Pode fazer outra substituição.');
+  }
+
+  // ===== LIMPAR =====
+  function limparTudo() {
+    document.getElementById('codigo-entrada').value = '';
+    document.getElementById('procurar').value = '';
+    document.getElementById('substituir').value = '';
+    document.getElementById('codigo-saida').value = '';
+    document.getElementById('resultado-simples').classList.remove('visivel');
+  }
+
+  // ===== MÚLTIPLOS =====
+  let contadorPares = 0;
+
+  function adicionarPar(de = '', para = '') {
+    contadorPares++;
+    const id = contadorPares;
+    const div = document.createElement('div');
+    div.className = 'multi-linha';
+    div.id = 'par-' + id;
+    div.innerHTML = `
+      <input type="text" placeholder="Procurar..." value="${de}" id="par-de-${id}">
+      <span class="seta">→</span>
+      <input type="text" placeholder="Substituir por..." value="${para}" id="par-para-${id}">
+      <button class="btn-remover" onclick="removerPar(${id})">✕</button>
+    `;
+    document.getElementById('lista-pares').appendChild(div);
+  }
+
+  function removerPar(id) {
+    const el = document.getElementById('par-' + id);
+    if (el) el.remove();
+  }
+
+  function fazerMultiplo() {
+    let codigo = document.getElementById('codigo-multi').value;
+    if (!codigo.trim()) { alert('Cole o código primeiro!'); return; }
+
+    const pares = document.querySelectorAll('.multi-linha');
+    if (pares.length === 0) { alert('Adicione pelo menos um par de substituição!'); return; }
+
+    let totalSubstituicoes = 0;
+    let relatorio = [];
+
+    pares.forEach(par => {
+      const inputs = par.querySelectorAll('input');
+      if (inputs.length < 2) return;
+      const de = inputs[0].value;
+      const para = inputs[1].value;
+      if (!de.trim()) return;
+
+      const regex = new RegExp(escapeRegex(de), 'gi');
+      const matches = codigo.match(regex);
+      const qtd = matches ? matches.length : 0;
+
+      if (qtd > 0) {
+        codigo = codigo.replace(regex, para);
+        totalSubstituicoes += qtd;
+        relatorio.push(`"${de}" → "${para || '(vazio)'}" — ${qtd}x`);
+        historico.unshift({ de, para, qtd, hora: new Date().toLocaleTimeString('pt-BR') });
+      }
+    });
+
+    if (totalSubstituicoes === 0) {
+      alert('Nenhum dos termos foi encontrado no código.');
+      return;
+    }
+
+    document.getElementById('codigo-multi-saida').value = codigo;
+    document.getElementById('resultado-multi-info').innerHTML =
+      `✅ <strong>${totalSubstituicoes}</strong> substituição(ões) feita(s):<br>` +
+      relatorio.map(r => `• ${r}`).join('<br>');
+    document.getElementById('resultado-multi').classList.add('visivel');
+
+    if (historico.length > 20) historico = historico.slice(0, 20);
+    atualizarHistorico();
+  }
+
+  function limparMultiplo() {
+    document.getElementById('codigo-multi').value = '';
+    document.getElementById('codigo-multi-saida').value = '';
+    document.getElementById('resultado-multi').classList.remove('visivel');
+    document.getElementById('lista-pares').innerHTML = '';
+    contadorPares = 0;
+    adicionarPar();
+  }
+
+  // ===== HISTÓRICO =====
+  function atualizarHistorico() {
+    const lista = document.getElementById('lista-historico');
+    if (historico.length === 0) {
+      lista.innerHTML = '<div style="color:#475569; font-size:0.85rem; text-align:center; padding:20px;">Nenhuma substituição feita ainda.</div>';
+      return;
+    }
+    lista.innerHTML = historico.map(h => `
+      <div class="historico-item">
+        <span class="historico-de">🔴 "${h.de}"</span>
+        <span style="color:#7c3aed"> → </span>
+        <span class="historico-para">🟢 "${h.para || '(vazio)'}"</span>
+        <div class="historico-qtd">${h.qtd} substituição(ões) · ${h.hora}</div>
+      </div>
+    `).join('');
+  }
+
+  function limparHistorico() {
+    historico = [];
+    atualizarHistorico();
+  }
+
+  // ===== UTILITÁRIO =====
+  function escapeRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  // ===== INICIALIZAR =====
+  adicionarPar('AIzaSy', 'SUA_CHAVE_AQ_AQUI');
+  adicionarPar('gemini-pro', 'gemini-2.5-flash');
+</script>
+
+</body>
+</html>

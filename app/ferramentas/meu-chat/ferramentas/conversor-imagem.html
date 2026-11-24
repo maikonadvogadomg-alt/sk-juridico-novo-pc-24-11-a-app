@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conversor de Imagem Econômico</title>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Arial, sans-serif;
+    background: #1a1a2e;
+    color: #eee;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  h1 {
+    text-align: center;
+    color: #00d4ff;
+    margin-bottom: 6px;
+    font-size: 1.4em;
+  }
+  .sub {
+    text-align: center;
+    color: #aaa;
+    font-size: 0.85em;
+    margin-bottom: 20px;
+  }
+  .card {
+    background: #16213e;
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 16px;
+    border: 1px solid #0f3460;
+  }
+  .card h2 {
+    color: #00d4ff;
+    font-size: 1em;
+    margin-bottom: 12px;
+  }
+
+  /* ÁREA DE DROP */
+  #dropZone {
+    border: 2px dashed #00d4ff;
+    border-radius: 10px;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.3s;
+    background: #0d1b2a;
+  }
+  #dropZone:hover, #dropZone.dragover {
+    background: #1a3a5c;
+  }
+  #dropZone p { color: #aaa; font-size: 0.9em; margin-top: 8px; }
+  #dropZone .icon { font-size: 2.5em; }
+  #fileInput { display: none; }
+
+  /* PREVIEW */
+  #previewBox { display: none; margin-top: 14px; text-align: center; }
+  #previewImg {
+    max-width: 100%;
+    max-height: 220px;
+    border-radius: 8px;
+    border: 1px solid #0f3460;
+  }
+  .info-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+  .badge {
+    background: #0f3460;
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.8em;
+    color: #00d4ff;
+  }
+
+  /* CONTROLES */
+  .controles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    margin-top: 14px;
+  }
+  .controles label { font-size: 0.85em; color: #aaa; }
+  .controles input[type=range] {
+    width: 120px;
+    accent-color: #00d4ff;
+  }
+  .val { color: #00d4ff; font-weight: bold; font-size: 0.9em; }
+
+  /* BOTÕES */
+  .btns { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+  button {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: bold;
+    transition: opacity 0.2s;
+  }
+  button:hover { opacity: 0.85; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-blue  { background: #00d4ff; color: #000; }
+  .btn-green { background: #00c853; color: #000; }
+  .btn-orange{ background: #ff9800; color: #000; }
+  .btn-red   { background: #f44336; color: #fff; }
+
+  /* PROGRESSO */
+  #progressBox { display: none; margin-top: 12px; }
+  #progressBar {
+    width: 100%;
+    height: 10px;
+    background: #0f3460;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  #progressFill {
+    height: 100%;
+    background: linear-gradient(90deg, #00d4ff, #00c853);
+    width: 0%;
+    transition: width 0.3s;
+    border-radius: 10px;
+  }
+  #progressText {
+    text-align: center;
+    font-size: 0.8em;
+    color: #aaa;
+    margin-top: 6px;
+  }
+
+  /* RESULTADO */
+  #resultBox { display: none; }
+  #resultText {
+    width: 100%;
+    min-height: 160px;
+    background: #0d1b2a;
+    color: #eee;
+    border: 1px solid #0f3460;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 0.85em;
+    font-family: monospace;
+    resize: vertical;
+  }
+  .result-info {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .badge-green { background: #1b5e20; color: #69f0ae; }
+  .badge-red   { background: #b71c1c; color: #ff8a80; }
+
+  /* MODO */
+  .modo-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .tab {
+    padding: 7px 14px;
+    border-radius: 20px;
+    border: 1px solid #0f3460;
+    background: transparent;
+    color: #aaa;
+    cursor: pointer;
+    font-size: 0.82em;
+    font-weight: normal;
+  }
+  .tab.ativo {
+    background: #00d4ff;
+    color: #000;
+    border-color: #00d4ff;
+    font-weight: bold;
+  }
+
+  /* DICA */
+  .dica {
+    background: #0f3460;
+    border-left: 3px solid #00d4ff;
+    padding: 10px 14px;
+    border-radius: 0 8px 8px 0;
+    font-size: 0.82em;
+    color: #aaa;
+    margin-top: 10px;
+  }
+  .dica strong { color: #00d4ff; }
+</style>
+</head>
+<body>
+
+<h1>🖼️ Conversor de Imagem Econômico</h1>
+<p class="sub">Transforma prints em texto ou imagem comprimida — gasta muito menos tokens na IA</p>
+
+<!-- UPLOAD -->
+<div class="card">
+  <h2>📁 1. Escolha a imagem</h2>
+  <div id="dropZone" onclick="document.getElementById('fileInput').click()">
+    <div class="icon">📷</div>
+    <p>Clique aqui ou arraste uma imagem</p>
+    <p style="font-size:0.75em; margin-top:4px;">PNG, JPG, WEBP, BMP</p>
+  </div>
+  <input type="file" id="fileInput" accept="image/*">
+  <div id="previewBox">
+    <img id="previewImg" src="" alt="preview">
+    <div class="info-row">
+      <span class="badge" id="badgeOriginal">Original: --</span>
+      <span class="badge" id="badgeDim">Dimensão: --</span>
+    </div>
+  </div>
+</div>
+
+<!-- MODO -->
+<div class="card">
+  <h2>⚙️ 2. Escolha o modo</h2>
+  <div class="modo-tabs">
+    <button class="tab ativo" onclick="setModo('ocr', this)">📝 Extrair Texto (OCR)</button>
+    <button class="tab" onclick="setModo('comprimir', this)">🗜️ Comprimir Imagem</button>
+    <button class="tab" onclick="setModo('ambos', this)">✨ Ambos</button>
+  </div>
+
+  <div id="opcoesComprimir">
+    <div class="controles">
+      <label>Qualidade:</label>
+      <input type="range" id="qualidade" min="10" max="95" value="40"
+        oninput="document.getElementById('valQ').textContent=this.value+'%'">
+      <span class="val" id="valQ">40%</span>
+
+      <label style="margin-left:10px;">Largura máx:</label>
+      <input type="range" id="largMax" min="200" max="1200" step="50" value="600"
+        oninput="document.getElementById('valL').textContent=this.value+'px'">
+      <span class="val" id="valL">600px</span>
+    </div>
+  </div>
+
+  <div class="dica">
+    <strong>💡 Dica:</strong> Para prints de código ou texto → use <strong>OCR</strong>. Para prints de tela com layout → use <strong>Comprimir</strong>. Para os dois → <strong>Ambos</strong>.
+  </div>
+</div>
+
+<!-- PROCESSAR -->
+<div class="card">
+  <h2>🚀 3. Processar</h2>
+  <div class="btns">
+    <button class="btn-blue" id="btnProcessar" onclick="processar()" disabled>
+      ▶ Processar Imagem
+    </button>
+    <button class="btn-red" onclick="limpar()">🗑️ Limpar</button>
+  </div>
+
+  <div id="progressBox">
+    <div id="progressBar"><div id="progressFill"></div></div>
+    <div id="progressText">Aguardando...</div>
+  </div>
+</div>
+
+<!-- RESULTADO -->
+<div class="card" id="resultBox">
+  <h2>✅ 4. Resultado</h2>
+  <div class="result-info">
+    <span class="badge badge-green" id="badgeEconomia">Economia: --</span>
+    <span class="badge" id="badgeTokens">Tokens aprox: --</span>
+    <span class="badge" id="badgeFinal">Tamanho final: --</span>
+  </div>
+
+  <div style="margin-top:12px;" id="areaOCR" style="display:none">
+    <p style="font-size:0.85em; color:#aaa; margin-bottom:6px;">📝 Texto extraído (copie e cole na IA):</p>
+    <textarea id="resultText" readonly></textarea>
+    <div class="btns" style="margin-top:8px;">
+      <button class="btn-green" onclick="copiarTexto()">📋 Copiar Texto</button>
+    </div>
+  </div>
+
+  <div style="margin-top:12px;" id="areaImg" style="display:none">
+    <p style="font-size:0.85em; color:#aaa; margin-bottom:6px;">🖼️ Imagem comprimida:</p>
+    <img id="imgComprimida" style="max-width:100%; border-radius:8px; border:1px solid #0f3460;">
+    <div class="btns" style="margin-top:8px;">
+      <button class="btn-orange" onclick="baixarImagem()">⬇️ Baixar Imagem</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let imagemArquivo = null;
+let modoAtual = 'ocr';
+let imgComprimidaBlob = null;
+let imgComprimidaURL = null;
+
+// DRAG AND DROP
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) carregarImagem(file);
+});
+
+document.getElementById('fileInput').addEventListener('change', e => {
+  if (e.target.files[0]) carregarImagem(e.target.files[0]);
+});
+
+function carregarImagem(file) {
+  imagemArquivo = file;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = document.getElementById('previewImg');
+    img.src = ev.target.result;
+    img.onload = () => {
+      document.getElementById('badgeDim').textContent = `Dimensão: ${img.naturalWidth}x${img.naturalHeight}px`;
+    };
+    document.getElementById('badgeOriginal').textContent = `Original: ${formatBytes(file.size)}`;
+    document.getElementById('previewBox').style.display = 'block';
+    document.getElementById('btnProcessar').disabled = false;
+    document.getElementById('resultBox').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function setModo(modo, btn) {
+  modoAtual = modo;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('ativo'));
+  btn.classList.add('ativo');
+}
+
+async function processar() {
+  if (!imagemArquivo) return;
+
+  document.getElementById('progressBox').style.display = 'block';
+  document.getElementById('resultBox').style.display = 'none';
+  document.getElementById('btnProcessar').disabled = true;
+  document.getElementById('areaOCR').style.display = 'none';
+  document.getElementById('areaImg').style.display = 'none';
+
+  setProgresso(5, 'Iniciando...');
+
+  try {
+    if (modoAtual === 'ocr') {
+      await fazerOCR();
+    } else if (modoAtual === 'comprimir') {
+      await fazerComprimir();
+    } else {
+      await fazerOCR();
+      await fazerComprimir();
+    }
+    document.getElementById('resultBox').style.display = 'block';
+  } catch(e) {
+    alert('Erro: ' + e.message);
+  }
+
+  document.getElementById('btnProcessar').disabled = false;
+}
+
+async function fazerOCR() {
+  setProgresso(10, 'Carregando motor OCR...');
+
+  const worker = await Tesseract.createWorker('por+eng', 1, {
+    logger: m => {
+      if (m.status === 'recognizing text') {
+        setProgresso(20 + Math.round(m.progress * 70), `Lendo texto: ${Math.round(m.progress*100)}%`);
+      }
+    }
+  });
+
+  setProgresso(20, 'Analisando imagem...');
+  const { data: { text } } = await worker.recognize(imagemArquivo);
+  await worker.terminate();
+
+  const textoLimpo = text.trim();
+  document.getElementById('resultText').value = textoLimpo || '(Nenhum texto encontrado na imagem)';
+  document.getElementById('areaOCR').style.display = 'block';
+
+  // Calcular economia de tokens
+  const tokensTexto = Math.ceil(textoLimpo.length / 4);
+  const tokensImagem = Math.ceil(imagemArquivo.size / 500);
+  const economia = Math.max(0, Math.round((1 - tokensTexto/tokensImagem)*100));
+
+  document.getElementById('badgeTokens').textContent = `Tokens aprox: ~${tokensTexto}`;
+  document.getElementById('badgeEconomia').textContent = `Economia: ~${economia}%`;
+  document.getElementById('badgeFinal').textContent = `Chars: ${textoLimpo.length}`;
+
+  setProgresso(100, '✅ Texto extraído!');
+}
+
+async function fazerComprimir() {
+  setProgresso(10, 'Comprimindo imagem...');
+
+  const qualidade = parseInt(document.getElementById('qualidade').value) / 100;
+  const largMax = parseInt(document.getElementById('largMax').value);
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = new Image();
+      img.onload = () => {
+        setProgresso(50, 'Redimensionando...');
+        const canvas = document.createElement('canvas');
+        let w = img.width, h = img.height;
+        if (w > largMax) { h = Math.round(h * largMax / w); w = largMax; }
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+
+        setProgresso(80, 'Finalizando compressão...');
+        canvas.toBlob(blob => {
+          imgComprimidaBlob = blob;
+          imgComprimidaURL = URL.createObjectURL(blob);
+          document.getElementById('imgComprimida').src = imgComprimidaURL;
+          document.getElementById('areaImg').style.display = 'block';
+
+          const economia = Math.round((1 - blob.size/imagemArquivo.size)*100);
+          document.getElementById('badgeEconomia').textContent = `Economia: ~${economia}%`;
+          document.getElementById('badgeFinal').textContent = `Final: ${formatBytes(blob.size)}`;
+          document.getElementById('badgeTokens').textContent = `Original: ${formatBytes(imagemArquivo.size)}`;
+
+          setProgresso(100, '✅ Imagem comprimida!');
+          resolve();
+        }, 'image/jpeg', qualidade);
+      };
+      img.onerror = reject;
+      img.src = ev.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(imagemArquivo);
+  });
+}
+
+function setProgresso(pct, texto) {
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = texto;
+}
+
+function copiarTexto() {
+  const txt = document.getElementById('resultText').value;
+  navigator.clipboard.writeText(txt).then(() => alert('✅ Texto copiado! Cole na IA.'));
+}
+
+function baixarImagem() {
+  if (!imgComprimidaURL) return;
+  const a = document.createElement('a');
+  a.href = imgComprimidaURL;
+  a.download = 'imagem_comprimida.jpg';
+  a.click();
+}
+
+function limpar() {
+  imagemArquivo = null;
+  document.getElementById('previewBox').style.display = 'none';
+  document.getElementById('progressBox').style.display = 'none';
+  document.getElementById('resultBox').style.display = 'none';
+  document.getElementById('fileInput').value = '';
+  document.getElementById('btnProcessar').disabled = true;
+  document.getElementById('resultText').value = '';
+  setProgresso(0, '');
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/1048576).toFixed(1) + ' MB';
+}
+</script>
+</body>
+</html>

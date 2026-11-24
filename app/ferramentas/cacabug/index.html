@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><style>/* 23/11: sem esticar */html,body,*{overscroll-behavior:none}</style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1420">
+<title>Caça-Bug</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/app.css">
+<script>if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });</script>
+</head>
+<body>
+  <header id="topo">
+    <span class="logo">🐞 Caça-Bug <small style="color:var(--bom);font-weight:600">1.7</small></span>
+    <button id="topo-proj" class="chip" title="Projeto em uso (toque para trocar)">nenhum projeto</button>
+  </header>
+
+  <main id="corpo">
+    <section class="tela" data-tela="projetos" id="tela-projetos"></section>
+    <section class="tela" data-tela="diagnostico" id="tela-diagnostico" hidden></section>
+    <section class="tela" data-tela="organizar" id="tela-organizar" hidden></section>
+    <section class="tela" data-tela="ferramentas" id="tela-ferramentas" hidden></section>
+    <section class="tela" data-tela="comparar" id="tela-comparar" hidden></section>
+    <section class="tela" data-tela="relatorios" id="tela-relatorios" hidden></section>
+    <section class="tela" data-tela="ia" id="tela-ia" hidden></section>
+    <section class="tela tela-larga" data-tela="terminal" id="tela-terminal" hidden></section>
+    <section class="tela tela-ferr" data-tela="ferramenta" hidden>
+      <div class="ferr-barra">
+        <button class="btn small" id="ferr-voltar">← Voltar</button>
+        <b id="ferr-titulo" class="grow"></b>
+        <button class="btn small" id="ferr-mandar" title="Entregar o projeto em uso de novo">📥 Projeto</button>
+        <button class="btn small primary" id="ferr-guardar">📌 Guardar relatório</button>
+      </div>
+      <div id="ferr-host"></div>
+    </section>
+  </main>
+
+  <nav id="abas">
+    <button data-aba="projetos">📁<span>Projetos</span></button>
+    <button data-aba="diagnostico">🩺<span>Diagnóstico</span></button>
+    <button data-aba="organizar">🗂️<span>Organizar</span></button>
+    <button data-aba="ferramentas">🧰<span>Ferramentas</span></button>
+    <button data-aba="comparar">⚖️<span>Comparar</span></button>
+    <button data-aba="relatorios">📋<span>Relatórios</span></button>
+    <button data-aba="ia">🤖<span>IA</span></button>
+    <button data-aba="terminal">💻<span>Terminal</span></button>
+  </nav>
+
+  <script src="js/00-core.js"></script>
+  <script src="js/20-zip.js"></script>
+  <script src="js/30-projeto.js"></script>
+  <script src="ferramentas/cirurgiao.js"></script>
+  <script src="ferramentas/projeto-lab.js"></script>
+  <script src="ferramentas/analisador-universal.js"></script>
+  <script src="ferramentas/triagem.js"></script>
+  <script src="ferramentas/gerador-eas.js"></script>
+  <script src="ferramentas/ai-code-studio.js"></script>
+  <script src="ferramentas/raiox.js"></script>
+  <script src="ferramentas/desembrulhar.js"></script>
+  <script src="lib/diff.min.js"></script>
+  <script src="js/40-ferramentas.js"></script>
+  <script src="js/50-relatorios.js"></script>
+  <script src="js/60-comparar.js"></script>
+  <script src="js/lib/plano-core.js"></script>
+  <script src="js/lib/expo-core.js"></script>
+  <script src="js/lib/organizar-core.js"></script>
+  <script src="js/45-organizar.js"></script>
+  <script src="js/46-limpo.js"></script>
+<script src="js/70-ia.js"></script>
+<script src="js/80-terminal.js"></script>
+<script src="js/99-app.js"></script>
+<script>window.TEMA_APP = { id: 'cacabug', barra: '#topo', padrao: 'escuro', cores: {
+  escuro: null,
+  claro: { '--bg': '#f4f6fb', '--card': '#ffffff', '--linha': '#d0d8e6', '--txt': '#172033', '--muted': '#55627a', '--acc': '#4f46e5', '--bom': '#15803d', '--meio': '#a15c00', '--ruim': '#c0262d' },
+  contraste: { '--bg': '#000000', '--card': '#0f0f0f', '--linha': '#8a8a8a', '--txt': '#ffffff', '--muted': '#e0e0e0', '--acc': '#9aa6ff', '--bom': '#4dff8f', '--meio': '#ffd33d', '--ruim': '#ff7070' },
+  papel: { '--bg': '#f2e9d6', '--card': '#fbf5e7', '--linha': '#d6c5a2', '--txt': '#2a2115', '--muted': '#67563c', '--acc': '#8a5514', '--bom': '#3d6a28', '--meio': '#9a5600', '--ruim': '#9b2c2c' }  },
+  extra: { claro: '#topo,.ferr-barra,#abas,.dif-barra{background:var(--card)!important}#abas button.ativa{background:var(--bg)!important}.chip,.btn,.lab-chip,.toast{background:var(--bg)!important;color:var(--txt)!important}.btn.primary{background:var(--acc)!important;color:#fff!important;border-color:var(--acc)!important}.btn.danger{background:#fde8ea!important;color:#9b1c2c!important;border-color:#e3a2aa!important}code,pre.rel-texto,.inp,.lab-busca{background:var(--bg)!important;color:var(--txt)!important}.tag{background:#e3e8fb!important;color:#3730a3!important}.tag.laranja{background:#fde7cf!important;color:#7c3a06!important}.aviso{background:#fdf3d8!important;border-color:#e6c97a!important;color:#5a4300!important}.linha.ruim{color:#b91c1c!important}.linha.meio{color:#92400e!important}.linha.bom{color:#166534!important}.dl.add{background:#dcfce7!important;color:#14532d!important}.dl.del{background:#fde8ea!important;color:#7f1d1d!important}.dl.pulo{background:var(--bg)!important}.link-dif{color:#4338ca!important}table.tab tr.dif td{background:#fdf3d8!important}.toast.ok{background:#dcfce7!important}.toast.error{background:#fde8ea!important}', papel: '#topo,.ferr-barra,#abas,.dif-barra{background:var(--card)!important}#abas button.ativa{background:var(--bg)!important}.chip,.btn,.lab-chip,.toast{background:var(--bg)!important;color:var(--txt)!important}.btn.primary{background:var(--acc)!important;color:#fff!important;border-color:var(--acc)!important}.btn.danger{background:#fde8ea!important;color:#9b1c2c!important;border-color:#e3a2aa!important}code,pre.rel-texto,.inp,.lab-busca{background:var(--bg)!important;color:var(--txt)!important}.tag{background:#e3e8fb!important;color:#3730a3!important}.tag.laranja{background:#fde7cf!important;color:#7c3a06!important}.aviso{background:#fdf3d8!important;border-color:#e6c97a!important;color:#5a4300!important}.linha.ruim{color:#b91c1c!important}.linha.meio{color:#92400e!important}.linha.bom{color:#166534!important}.dl.add{background:#dcfce7!important;color:#14532d!important}.dl.del{background:#fde8ea!important;color:#7f1d1d!important}.dl.pulo{background:var(--bg)!important}.link-dif{color:#4338ca!important}table.tab tr.dif td{background:#fdf3d8!important}.toast.ok{background:#dcfce7!important}.toast.error{background:#fde8ea!important}' } };</script>
+<script src="js/tema.js"></script>
+<script>window.JANELA_BARRA = '#topo';</script>
+<script src="js/janela-pc.js"></script>
+</body>
+</html>

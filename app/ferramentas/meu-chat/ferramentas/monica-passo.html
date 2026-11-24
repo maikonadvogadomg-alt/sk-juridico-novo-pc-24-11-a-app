@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guia Monica API - Passo a Passo</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 16px;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  h1 {
+    text-align: center;
+    font-size: 1.5rem;
+    color: #7c3aed;
+    margin-bottom: 6px;
+  }
+  .subtitulo {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+  }
+
+  /* ABAS */
+  .abas {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .aba {
+    flex: 1;
+    min-width: 100px;
+    padding: 10px 8px;
+    background: #1e293b;
+    border: 2px solid #334155;
+    border-radius: 10px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: #94a3b8;
+    transition: all 0.2s;
+  }
+  .aba.ativa {
+    background: #7c3aed;
+    border-color: #7c3aed;
+    color: white;
+    font-weight: bold;
+  }
+  .aba:hover:not(.ativa) {
+    border-color: #7c3aed;
+    color: #c4b5fd;
+  }
+
+  /* SEÇÕES */
+  .secao { display: none; }
+  .secao.visivel { display: block; }
+
+  /* CARD */
+  .card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .card-titulo {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #c4b5fd;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .numero {
+    background: #7c3aed;
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: bold;
+    flex-shrink: 0;
+  }
+
+  /* DESTAQUE */
+  .destaque {
+    background: #0f172a;
+    border-left: 4px solid #7c3aed;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 10px 0;
+    font-size: 0.9rem;
+  }
+  .destaque.verde { border-left-color: #22c55e; }
+  .destaque.amarelo { border-left-color: #f59e0b; }
+  .destaque.vermelho { border-left-color: #ef4444; }
+
+  /* BOTÃO LINK */
+  .btn-link {
+    display: inline-block;
+    background: #7c3aed;
+    color: white;
+    padding: 10px 18px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 0.9rem;
+    margin: 6px 0;
+    transition: background 0.2s;
+  }
+  .btn-link:hover { background: #6d28d9; }
+  .btn-link.verde { background: #16a34a; }
+  .btn-link.verde:hover { background: #15803d; }
+
+  /* TABELA */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    margin: 10px 0;
+  }
+  th {
+    background: #7c3aed;
+    color: white;
+    padding: 8px;
+    text-align: left;
+  }
+  td {
+    padding: 8px;
+    border-bottom: 1px solid #334155;
+  }
+  tr:nth-child(even) td { background: #0f172a; }
+
+  /* ALERTA */
+  .alerta {
+    background: #1c1917;
+    border: 1px solid #f59e0b;
+    border-radius: 10px;
+    padding: 12px;
+    margin: 10px 0;
+    font-size: 0.88rem;
+    color: #fcd34d;
+  }
+  .alerta-titulo {
+    font-weight: bold;
+    margin-bottom: 4px;
+    font-size: 0.95rem;
+  }
+
+  /* PASSO A PASSO VISUAL */
+  .passo {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 14px;
+    align-items: flex-start;
+  }
+  .passo-num {
+    background: #7c3aed;
+    color: white;
+    min-width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+  }
+  .passo-conteudo {
+    flex: 1;
+  }
+  .passo-titulo {
+    font-weight: bold;
+    color: #c4b5fd;
+    margin-bottom: 4px;
+  }
+  .passo-desc {
+    font-size: 0.88rem;
+    color: #94a3b8;
+  }
+  .passo-tela {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 8px;
+    font-size: 0.82rem;
+    color: #7dd3fc;
+    font-family: monospace;
+  }
+
+  /* COMPARAÇÃO */
+  .comparacao {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 10px 0;
+  }
+  .comp-card {
+    background: #0f172a;
+    border-radius: 10px;
+    padding: 12px;
+    border: 2px solid #334155;
+  }
+  .comp-card.melhor { border-color: #22c55e; }
+  .comp-titulo {
+    font-weight: bold;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    color: #c4b5fd;
+  }
+  .comp-item {
+    font-size: 0.82rem;
+    color: #94a3b8;
+    margin-bottom: 4px;
+    display: flex;
+    gap: 6px;
+  }
+
+  /* PREÇO */
+  .preco-box {
+    background: #0f172a;
+    border: 2px solid #7c3aed;
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+    margin: 10px 0;
+  }
+  .preco-valor {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #7c3aed;
+  }
+  .preco-desc {
+    font-size: 0.82rem;
+    color: #94a3b8;
+    margin-top: 4px;
+  }
+
+  /* RODAPÉ */
+  .rodape {
+    text-align: center;
+    font-size: 0.75rem;
+    color: #475569;
+    margin-top: 20px;
+    padding-top: 12px;
+    border-top: 1px solid #1e293b;
+  }
+  .fonte-link {
+    color: #7c3aed;
+    text-decoration: none;
+  }
+
+  /* BADGE */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    margin-left: 6px;
+  }
+  .badge.verde { background: #166534; color: #86efac; }
+  .badge.amarelo { background: #713f12; color: #fde68a; }
+  .badge.roxo { background: #4c1d95; color: #c4b5fd; }
+
+  /* ÍCONES EMOJI */
+  .emoji { font-size: 1.2rem; }
+</style>
+</head>
+<body>
+
+<h1>🔑 Guia Monica API</h1>
+<p class="subtitulo">Passo a passo para leigo — sem complicação</p>
+
+<!-- ABAS -->
+<div class="abas">
+  <div class="aba ativa" onclick="trocarAba('o-que-e', this)">📖 O que é?</div>
+  <div class="aba" onclick="trocarAba('como-pagar', this)">💳 Como pagar</div>
+  <div class="aba" onclick="trocarAba('pegar-chave', this)">🔑 Pegar chave</div>
+  <div class="aba" onclick="trocarAba('precos', this)">💰 Preços</div>
+  <div class="aba" onclick="trocarAba('duvidas', this)">❓ Dúvidas</div>
+</div>
+
+<!-- ===== ABA 1: O QUE É ===== -->
+<div id="o-que-e" class="secao visivel">
+
+  <div class="card">
+    <div class="card-titulo"><span class="emoji">🤔</span> O que é a Monica API?</div>
+    <p style="font-size:0.9rem; color:#94a3b8; margin-bottom:12px;">
+      Pensa assim: a Monica API é como uma <strong style="color:#c4b5fd">tomada universal de inteligência artificial</strong>.
+      Em vez de pagar separado para o Google, para a OpenAI, para a Anthropic... você paga numa conta só e usa todos.
+    </p>
+    <div class="destaque verde">
+      ✅ <strong>Uma chave só</strong> → acessa Claude, GPT, Gemini e mais
+    </div>
+    <div class="destaque amarelo">
+      ⚠️ <strong>Atenção:</strong> A Monica API é <em>diferente</em> da assinatura normal da Monica (Pro/Max/Ultra). São contas separadas!
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-titulo"><span class="emoji">⚖️</span> Monica API vs Google direto</div>
+    <div class="comparacao">
+      <div class="comp-card melhor">
+        <div class="comp-titulo">✅ Monica API</div>
+        <div class="comp-item">✅ Vários modelos</div>
+        <div class="comp-item">✅ Uma chave só</div>
+        <div class="comp-item">✅ Preço igual</div>
+        <div class="comp-item">✅ Fácil de trocar</div>
+      </div>
+      <div class="comp-card">
+        <div class="comp-titulo">🔵 Google direto</div>
+        <div class="comp-item">🔵 Só Gemini</div>
+        <div class="comp-item">🔵 Chave separada</div>
+        <div class="comp-item">🔵 Preço igual</div>
+        <div class="comp-item">🔴 Precisa reconfigurar</div>
+      </div>
+    </div>
+    <div class="destaque verde">
+      💡 Para o seu caso: <strong>Monica API vale mais</strong> — seus projetos já estão prontos para ela.
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== ABA 2: COMO PAGAR ===== -->
+<div id="como-pagar" class="secao">
+
+  <div class="card">
+    <div class="card-titulo"><span class="emoji">💳</span> Como funciona o pagamento?</div>
+    <div class="destaque verde">
+      💡 <strong>É pré-pago</strong> — igual a um cartão presente. Você coloca crédito e vai usando. Quando acabar, para. <strong>Sem cobrança surpresa!</strong>
+    </div>
+    <div class="preco-box">
+      <div class="preco-valor">$5 USD</div>
+      <div class="preco-desc">Valor mínimo para começar<br>≈ R$ 28 reais (varia com câmbio)</div>
+    </div>
+    <p style="font-size:0.85rem; color:#94a3b8; margin-top:8px;">
+      Com $5 dólares no Gemini 2.5 Flash você consegue fazer <strong style="color:#c4b5fd">centenas de conversas</strong> — dura semanas no uso normal.
+    </p>
+  </div>
+
+  <div class="card">
+    <div class="card-titulo"><span class="emoji">📋</span> Passo a passo para pagar</div>
+
+    <div class="passo">
+      <div class="passo-num">1</div>
+      <div class="passo-conteudo">
+        <div class="passo-titulo">Acesse a plataforma</div>
+        <div class="passo-desc">Abra o site da Monica API (link abaixo)</div>
+        <div class="passo-tela">🌐 platform.monica.im</div>
+        <a href="https://platform.monica.im/" target="_blank" class="btn-link">Abrir Monica API →</a>
+      </div>
+    </div>
+
+    <div class="passo">
+      <div class="passo-num">2</div>
+      <div class="passo-conteudo">
+        <div class="passo-titulo">Faça login</div>
+        <div class="passo-desc">Use a mesma conta que você já usa na Monica. Pode entrar com Google.</div>
+        <div class="passo-tela">📧 Clique em "Sign In" → Entre com Google</div>
+      </div>
+    </div>
+
+    <div class="passo">
+      <div class="passo-num">3</div>
+      <div class="passo-conteudo">
+        <div class="passo-titulo">Vá em "Billing" (Cobrança)</div>
+        <div class="passo-desc">No menu do lado esquerdo, procure "Billing" ou "Dashboard → Billing"</div>
+        <div class="passo-tela">📍 Menu esquerdo → Billing → Add Funds</div>
+        <a href="https://platform.monica.im/dashboard/billing" target="_blank" class="btn-link">Ir para Billing →</a>
+      </div>
+    </div>
+
+    <div class="passo">
+      <div class="passo-num">4</div>
+      <div class="passo-conteudo">
+        <div class="passo-titulo">Clique em "Add Funds"</div>
+        <div class="passo-desc">Escolha o valor. Começa com $5 para testar.</div>
+        <div class="passo-tela">💵 Opções: $5 / $10 / $20 / $50 / $100</div>
+      </div>
+    </div>
+
+    <div class="passo">
+      <div class="passo-num">5</div>
+      <div class="passo-conteudo">
+        <div class="passo-titulo">Pague com cartão</div>
+        <div class="passo-desc">Aceita cartão de crédito/débito internacional. Coloque os dados e confirme.</div>
+        <div class="passo-tela">💳 Visa / Mastercard / cartão virtual funciona</div>
+      </div>
+    </div>
+
+    <div class="passo">
+      <div class="passo-num">6</div>
+      <div class="passo-conteudo">
+        <div class="passo-titulo">Pronto! Crédito na conta</div>
+        <div class="passo-desc">O saldo aparece na tela. Agora é só pegar a chave.</div>
+        <div class="passo-tela">✅ Balance: $5.00 — Pronto para usar!</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="alerta">
+    <div class="alerta-titulo">⚠️ Cartão bloqueando?</div>
+    Se o cartão não passar, tente um cartão virtual (Nubank, Inter, C6 Bank geram cartão virtual grátis). 
+    Também pode entrar em contato com o suporte da Monica pelo link de feedback deles.
+  </div>
+
+</div>
+
+<!-- ===== ABA 3: PEGAR CHAVE ===== -->
+<div id="pegar-chave" class="secao">
+
+  <div class="card">
+    <div class="card-titulo"><span class="emoji">🔑</span> O que é a "chave de API"?</div>
+    <p style="font-size:0.9rem; color:#94a3b8; margin-bottom:10px;">
+      A chave é como uma <strong style="color:#c4b5fd">senha especial</strong> que você coloca nos seus projetos (Meu Chat, Laboratório, etc.) para eles conseguirem usar a IA. Sem ela, o projeto não consegue se conectar.
+    </p>
+    <div class="destaque amarelo">
+      🔒 <strong>NUNCA mostre sua chave para ninguém!</strong> Quem tiver ela pode gastar seus créditos.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-titulo"><span class="emoji">📋</span> Como pegar a chave</div>
+
+    <div class="passo">
+      <div class="passo-num">1</div>
+      <div class="passo-conteudo">
+        <div class="passo-titulo">Entre na plataforma</div>
+        <div class="passo-desc">Já logado, vá para o painel principal</div>
+        <a href="https://platform.monica.im/" target="_blank" class="btn-link">Abrir Monica API →</a>
+      </div>
+    </div>
+
+    <div class="passo">
+      <div class="passo-num">2</div>
+      <div class="passo-conteudo">
+        <div class="passo-titulo">Procure "API Keys"</div>
+        <div class="passo-desc">No menu esquerdo, clique em "API Keys" (Chaves de API)</div>
+        <div class="passo-tela">📍 Menu esquerdo → API Keys</div>
+      </div>
+    </div>
+
+    <div class="passo">
+      <div class="passo-num">3</div>
+      <div class="passo-conteudo">
+        <div class="passo-titulo">Clique em "Create New Key"</div>
+        <div class="passo-desc">Dê um nome para lembrar (ex: "Meu Chat") e confirme</div>
+        <div class="passo-tela">✏️ Nome: MeuChat → Create Key</div>
+      </div>
+    </div>
+
+    <div class="passo">
+      <div class="passo-num">4</div>
+      <div class="passo-conteudo">
+        <div class="passo-titulo">COPIE a chave AGORA!</div>
+        <div class="passo-desc">Ela aparece só uma vez. Copie e salve num lugar seguro (ex: bloco de notas no celular).</div>
+        <div class="passo-tela">🔑 sk-monica-xxxxxxxxxxxxxxxxxxxxxxxx</div>
+      </div>
+    </div>
+
+    <div class="passo">
+      <div class="passo-num">5</div>
+      <div class="passo-conteudo">
+        <div class="passo-titulo">Cole nos seus projetos</div>
+        <div class="passo-desc">No Meu Chat, Laboratório, etc. — onde pede "Chave de API", cole ela.</div>
+        <div class="passo-tela">⚙️ Configurações → Chave de API → Cole aqui</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="card">
+    <div class="card-titulo"><span class="emoji">⚙️</span> Configurações para colocar no projeto</div>
+    <div class="destaque">
+      <strong>URL base (endereço):</strong><br>
+      <code style="color:#7dd3fc">https://openapi.monica.im/v1</code>
+    </div>
+    <div class="destaque">
+      <strong>Modelo Gemini 2.5 Flash:</strong><br>
+      <code style="color:#7dd3fc">gemini-2.5-flash</code>
+    </div>
+    <div class="destaque">
+      <strong>Chave:</strong><br>
+      <code style="color:#7dd3fc">sk-monica-... (a que você copiou)</code>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== ABA 4: PREÇOS ===== -->
+<div id="precos" class="secao">
+
+  <div class="card">
+    <div class="card-titulo"><span class="emoji">💰</span> Quanto custa usar?</div>
+    <p style="font-size:0.85rem; color:#94a3b8; margin-bottom:12px;">
+      O preço é cobrado por <strong style="color:#c4b5fd">tokens</strong> — pensa como se fossem "pedaços de texto". 
+      Uma palavra = mais ou menos 1 token. Uma conversa normal = 500 a 2000 tokens.
+    </p>
+    <table>
+      <tr>
+        <th>Modelo</th>
+        <th>Entrada</th>
+        <th>Saída</th>
+        <th>Uso</th>
+      </tr>
+      <tr>
+        <td>Gemini 2.5 Flash <span class="badge verde">Recomendado</span></td>
+        <td>$0,30</td>
+        <td>$2,50</td>
+        <td>Geral</td>
+      </tr>
+      <tr>
+        <td>Claude Sonnet 4</td>
+        <td>$3,00</td>
+        <td>$15,00</td>
+        <td>Complexo</td>
+      </tr>
+      <tr>
+        <td>GPT-4o Mini</td>
+        <td>$0,15</td>
+        <td>$0,60</td>
+        <td>Simples</td>
+      </tr>
+      <tr>
+        <td>Gemini 2.5 Pro</td>
+        <td>$1,25</td>
+        <td>$10,00</td>
+        <td>Avançado</td>
+      </tr>
+    </table>
+    <p style="font-size:0.78rem; color:#64748b; margin-top:6px;">* Preços por 1 milhão de tokens</p>
+  </div>
+
+  <div class="card">
+    <div class="card-titulo"><span class="emoji">🧮</span> Quanto dura $5 dólares?</div>
+    <div class="destaque verde">
+      Com <strong>$5 USD</strong> no Gemini 2.5 Flash você consegue aproximadamente:
+    </div>
+    <table>
+      <tr>
+        <th>Tipo de uso</th>
+        <th>Quantidade</th>
+      </tr>
+      <tr>
+        <td>Conversas normais (500 tokens)</td>
+        <td>~3.000 conversas</td>
+      </tr>
+      <tr>
+        <td>Análise de código (2000 tokens)</td>
+        <td>~750 análises</td>
+      </tr>
+      <tr>
+        <td>Documentos longos (10.000 tokens)</td>
+        <td>~150 documentos</td>
+      </tr>
+    </table>
+    <div class="destaque amarelo">
+      💡 Na prática: <strong>$5 dura semanas</strong> para uso normal de advogado.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-titulo"><span class="emoji">📦</span> Créditos avançados (diferente da API!)</div>
+    <p style="font-size:0.85rem; color:#94a3b8; margin-bottom:10px;">
+      Existe também um sistema de "créditos avançados" para funções especiais da Monica (geração de imagem, vídeo, etc.). 
+      <strong style="color:#c4b5fd">Isso é diferente da API!</strong>
+    </p>
+    <table>
+      <tr>
+        <th>Pacote</th>
+        <th>Preço</th>
+        <th>Para que serve</th>
+      </tr>
+      <tr>
+        <td>4.000 créditos</td>
+        <td>$10</td>
+        <td>~1.330 imagens geradas</td>
+      </tr>
+      <tr>
+        <td>12.000 créditos <span class="badge amarelo">Popular</span></td>
+        <td>$30</td>
+        <td>~4.000 imagens geradas</td>
+      </tr>
+      <tr>
+        <td>40.000 créditos</td>
+        <td>$100</td>
+        <td>~13.330 imagens geradas</td>
+      </tr>
+    </table>
+    <div class="destaque amarelo">
+      ⚠️ Para seus projetos jurídicos, você <strong>NÃO precisa</strong> desses créditos avançados. Só precisa do saldo da API.
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== ABA 5: DÚVIDAS ===== -->
+<div id="duvidas" class="secao">
+
+  <div class="card">
+    <div class="card-titulo"><span class="emoji">❓</span> Perguntas frequentes</div>
+
+    <div class="destaque">
+      <strong>🤔 Tenho assinatura Pro da Monica. Posso usar a API de graça?</strong><br>
+      <span style="color:#94a3b8">NÃO. A assinatura Pro e a API são sistemas separados. Precisa colocar crédito na API mesmo tendo Pro.</span>
+    </div>
+
+    <div class="destaque">
+      <strong>🤔 Tem cobrança automática todo mês?</strong><br>
+      <span style="color:#94a3b8">NÃO. É pré-pago. Você coloca $5, usa, quando acabar para. Sem surpresa.</span>
+    </div>
+
+    <div class="destaque">
+      <strong>🤔 O crédito expira?</strong><br>
+      <span style="color:#94a3b8">Os créditos avançados (para imagens) não expiram mas precisam de assinatura ativa. O saldo da API fica disponível enquanto a conta existir.</span>
+    </div>
+
+    <div class="destaque">
+      <strong>🤔 Posso usar cartão brasileiro?</strong><br>
+      <span style="color:#94a3b8">Sim, cartão de crédito/débito com bandeira Visa ou Mastercard funciona. Se travar, tente cartão virtual do Nubank ou Inter.</span>
+    </div>
+
+    <div class="destaque">
+      <strong>🤔 Como sei quanto gastei?</strong><br>
+      <span style="color:#94a3b8">Na plataforma, em "Billing", você vê o saldo atual e o histórico de uso em tempo real.</span>
+    </div>
+
+    <div class="destaque">
+      <strong>🤔 Posso usar nos meus projetos (Meu Chat, Laboratório)?</strong><br>
+      <span style="color:#94a3b8">SIM! É exatamente para isso. Coloque a chave nas configurações do projeto e pronto.</span>
+    </div>
+
+  </div>
+
+  <div class="card">
+    <div class="card-titulo"><span class="emoji">🆘</span> Precisa de ajuda?</div>
+    <p style="font-size:0.88rem; color:#94a3b8; margin-bottom:10px;">
+      Se travar em algum passo, me manda mensagem aqui descrevendo onde travou. Resolvo junto com você.
+    </p>
+    <div class="destaque verde">
+      ✅ <strong>Próximo passo sugerido:</strong> Acesse platform.monica.im, faça login e clique em "Add Funds" para colocar $5.
+    </div>
+    <a href="https://platform.monica.im/" target="_blank" class="btn-link verde">Ir para Monica API agora →</a>
+  </div>
+
+</div>
+
+<!-- RODAPÉ COM FONTES -->
+<div class="rodape">
+  <p>📚 Fontes consultadas:</p>
+  <p>
+    <a href="https://platform.monica.im/" target="_blank" class="fonte-link">Monica API Platform</a> ·
+    <a href="https://monica.im/billing" target="_blank" class="fonte-link">Monica Billing</a> ·
+    <a href="https://monica.im/credits" target="_blank" class="fonte-link">Monica Credits</a> ·
+    <a href="https://monica.im/help/FAQs/rules_for_using_advanced_queries" target="_blank" class="fonte-link">Regras de Créditos Avançados</a>
+  </p>
+  <p style="margin-top:6px;">Guia criado por Monica AI · Novembro 2026</p>
+</div>
+
+<script>
+function trocarAba(id, elemento) {
+  // Esconde todas as seções
+  document.querySelectorAll('.secao').forEach(s => s.classList.remove('visivel'));
+  // Remove ativa de todas as abas
+  document.querySelectorAll('.aba').forEach(a => a.classList.remove('ativa'));
+  // Mostra a seção certa
+  document.getElementById(id).classList.add('visivel');
+  // Marca a aba como ativa
+  elemento.classList.add('ativa');
+}
+</script>
+
+</body>
+</html>

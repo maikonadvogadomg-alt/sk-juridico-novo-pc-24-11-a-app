@@ -1,0 +1,248 @@
+{
+  "titulo": "SK-Juridico-Novo-PC-24-11-A",
+  "arquivo": "index.html",
+  "itens": [
+    {
+      "path": "app/ferramentas/banco-neon.html",
+      "nome": "Banco de Dados (Neon)",
+      "desc": "",
+      "on": false,
+      "icone": "app/ferramentas/icons/icon.svg"
+    },
+    {
+      "path": "app/ferramentas/cacabug/index.html",
+      "nome": "Caça-Bug",
+      "desc": "",
+      "on": false,
+      "icone": "app/ferramentas/cacabug/icons/icon-192.png"
+    },
+    {
+      "path": "app/ferramentas/calculadora-sentenca.html",
+      "nome": "Calculadora da Sentença",
+      "desc": "",
+      "on": false,
+      "icone": "app/ferramentas/icons/icon-192.png"
+    },
+    {
+      "path": "app/ferramentas/colador.html",
+      "nome": "Colador de Links",
+      "desc": "",
+      "on": false,
+      "icone": "app/ferramentas/icons/icon-192.png"
+    },
+    {
+      "path": "app/ferramentas/colecionador.html",
+      "nome": "Colecionador de Comandos",
+      "desc": "",
+      "on": false,
+      "icone": "app/ferramentas/icons/icon-192.png"
+    },
+    {
+      "path": "app/ferramentas/comparador.html",
+      "nome": "Comparador de Versões",
+      "desc": "",
+      "on": false,
+      "icone": "app/ferramentas/icons/icon-192.png"
+    },
+    {
+      "path": "app/ferramentas/comunicacoes.html",
+      "nome": "Comunicações Processuais",
+      "desc": "",
+      "on": false,
+      "icone": "app/ferramentas/icons/icon-192.png"
+    },
+    {
+      "path": "app/ferramentas/desmontador-backup.html",
+      "nome": "Restaurador Universal",
+      "desc": "",
+      "on": false,
+      "icone": "app/ferramentas/icons/icon-192.png"
+    },
+    {
+      "path": "app/ferramentas/extrator.html",
+      "nome": "Extrator de Sites",
+      "desc": "",
+      "on": false,
+      "icone": "app/ferramentas/icons/icon-192.png"
+    },
+    {
+      "path": "app/ferramentas/juntador.html",
+      "nome": "Juntador de Arquivos",
+      "desc": "",
+      "on": false,
+      "icone": "app/ferramentas/icons/icon-192.png"
+    },
+    {
+      "path": "app/ferramentas/laboratorio.html",
+      "nome": "Laboratório HTML",
+      "desc": "",
+      "on": false,
+      "icone": "app/ferramentas/icons/icon-192.png"
+    },
+    {
+      "path": "app/ferramentas/limpador.html",
+      "nome": "Limpador de Processos",
+      "desc": "",
+      "on": false,
+      "icone": "app/ferramentas/icons/icon-192.png"
+    },
+    {
+      "path": "app/ferramentas/meu-chat/ferramentas/analisador-v2.html",
+      "nome": "Analisador Local de Projetos — V2",
+      "desc": "",
+      "on": false,
+      "icone": ""
+    },
+    {
+      "path": "app/ferramentas/meu-chat/ferramentas/analisador.html",
+      "nome": "Analisador de Projetos",
+      "desc": "",
+      "on": false,
+      "icone": ""
+    },
+    {
+      "path": "app/ferramentas/meu-chat/ferramentas/caca-sql.html",
+      "nome": "🔍 Caça Esquema SQL",
+      "desc": "",
+      "on": false,
+      "icone": ""
+    },
+    {
+      "path": "app/ferramentas/meu-chat/ferramentas/cofre-config.html",
+      "nome": "⚖️ Cofre de Configurações",
+      "desc": "",
+      "on": false,
+      "icone": ""
+    },
+    {
+      "path": "app/ferramentas/meu-chat/ferramentas/colecionador-codigo.html",
+      "nome": "Colecionador de Código",
+      "desc": "",
+      "on": false,
+      "icone": ""
+    },
+    {
+      "path": "app/ferramentas/meu-chat/ferramentas/comandos-termux.html",
+      "nome": "📦 Banco de Comandos Termux",
+      "desc": "",
+      "on": false,
+      "icone": ""
+    },
+    {
+      "path": "app/ferramentas/meu-chat/ferramentas/conversor-imagem.html",
+      "nome": "Conversor de Imagem Econômico",
+      "desc": "",
+      "on": false,
+      "icone": ""
+    },
+    {
+      "path": "app/ferramentas/meu-chat/ferramentas/detector-api.html",
+      "nome": "Detector e Corretor de API",
+      "desc": "",
+      "on": false,
+      "icone": ""
+    },
+    {
+      "path": "app/ferramentas/meu-chat/ferramentas/divisor-html.html",
+      "nome": "Divisor de HTML",
+      "desc": "",
+      "on": false,
+      "icone": ""
+    },
+    {
+      "path": "app/ferramentas/meu-chat/ferramentas/juntador.html",
+      "nome": "Juntador de Projetos HTML",
+      "desc": "",
+      "on": false,
+      "icone": ""
+    },
+    {
+      "path": "app/ferramentas/meu-chat/ferramentas/leitor-universal.html",
+      "nome": "📂 Leitor Universal de Arquivos",
+      "desc": "",
+      "on": false,
+      "icone": ""
+    },
+    {
+      "path": "app/ferramentas/meu-chat/ferramentas/monica-guia.html",
+      "nome": "API Monica — Guia Visual",
+      "desc": "",
+      "on": false,
+      "icone": ""
+    },
+    {
+      "path": "app/ferramentas/meu-chat/ferramentas/monica-passo.html",
+      "nome": "Guia Monica API - Passo a Passo",
+      "desc": "",
+      "on": false,
+      "icone": ""
+    },
+    {
+      "path": "app/ferramentas/meu-chat/ferramentas/montador-modulos.html",
+      "nome": "🧩 Montador de Módulos — PWA Jurídico",
+      "desc": "",
+      "on": false,
+      "icone": ""
+    },
+    {
+      "path": "app/ferramentas/meu-chat/ferramentas/procurar-substituir.html",
+      "nome": "Procurar e Substituir",
+      "desc": "",
+      "on": false,
+      "icone": ""
+    },
+    {
+      "path": "app/ferramentas/meu-chat/index.html",
+      "nome": "Meu Chat",
+      "desc": "",
+      "on": false,
+      "icone": "app/ferramentas/meu-chat/icons/icon-192.png"
+    },
+    {
+      "path": "app/ferramentas/organizador.html",
+      "nome": "Organizador de Documentos",
+      "desc": "",
+      "on": false,
+      "icone": "app/ferramentas/icons/icon-192.png"
+    },
+    {
+      "path": "app/ferramentas/perito.html",
+      "nome": "Perito de Metadados",
+      "desc": "",
+      "on": false,
+      "icone": "app/ferramentas/icons/icon-192.png"
+    },
+    {
+      "path": "app/ferramentas/transcrever.html",
+      "nome": "Transcrever Áudio",
+      "desc": "",
+      "on": false,
+      "icone": "app/ferramentas/icons/icon-192.png"
+    },
+    {
+      "path": "app/ferramentas/verificador-citacoes.html",
+      "nome": "Verificador de Citações",
+      "desc": "",
+      "on": false,
+      "icone": "app/ferramentas/icons/icon-192.png"
+    },
+    {
+      "path": "app/index.html",
+      "nome": "SK Jurídico Novo",
+      "desc": "",
+      "on": true,
+      "icone": "app/icons/icon.svg"
+    },
+    {
+      "path": "electron/navegador.html",
+      "nome": "🌐 Navegador — Mini SK",
+      "desc": "",
+      "on": false,
+      "icone": ""
+    }
+  ],
+  "sub": "",
+  "logo": "",
+  "tema": "dourado",
+  "links": []
+}

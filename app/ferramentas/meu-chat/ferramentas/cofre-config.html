@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚖️ Cofre de Configurações</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --card: #1a1d27;
+    --card2: #22263a;
+    --accent: #4f8ef7;
+    --accent2: #7c3aed;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --border: #2d3148;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; min-height: 100vh; }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(135deg, #1a1d27, #22263a);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px;
+  }
+  header h1 { font-size: 1.4rem; display: flex; align-items: center; gap: 10px; }
+  header h1 span { font-size: 1.6rem; }
+  .header-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  /* BOTÕES */
+  .btn {
+    padding: 9px 18px; border: none; border-radius: 8px;
+    cursor: pointer; font-size: 0.85rem; font-weight: 600;
+    display: flex; align-items: center; gap: 6px; transition: all .2s;
+  }
+  .btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-purple { background: var(--accent2); color: #fff; }
+  .btn-green { background: var(--green); color: #fff; }
+  .btn-red { background: var(--red); color: #fff; }
+  .btn-yellow { background: var(--yellow); color: #000; }
+  .btn-ghost { background: var(--card2); color: var(--text); border: 1px solid var(--border); }
+  .btn-sm { padding: 5px 10px; font-size: 0.78rem; }
+
+  /* LAYOUT */
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+  /* ABAS DE ESPECIALIDADE */
+  .tabs-wrap { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
+  .tab {
+    padding: 8px 16px; border-radius: 20px; cursor: pointer;
+    font-size: 0.83rem; font-weight: 600; border: 2px solid transparent;
+    background: var(--card2); color: var(--muted); transition: all .2s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .tab:hover { border-color: var(--accent); color: var(--text); }
+  .tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .tab .del-tab { margin-left: 4px; opacity: .6; font-size: .9rem; }
+  .tab .del-tab:hover { opacity: 1; color: var(--red); }
+
+  /* GRID DE CARDS */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+
+  /* CARD DE ITEM */
+  .item-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    position: relative;
+    transition: border-color .2s;
+  }
+  .item-card:hover { border-color: var(--accent); }
+  .item-card .card-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 10px; gap: 8px;
+  }
+  .item-card .card-title { font-weight: 700; font-size: 1rem; color: var(--text); }
+  .item-card .card-type {
+    font-size: 0.7rem; font-weight: 700; padding: 3px 8px;
+    border-radius: 20px; white-space: nowrap;
+  }
+  .type-api { background: #1e3a5f; color: #60a5fa; }
+  .type-link { background: #1a3a2a; color: #4ade80; }
+  .type-token { background: #3b1f5e; color: #c084fc; }
+  .type-comando { background: #3b2a0a; color: #fbbf24; }
+  .type-outro { background: #2a2a2a; color: #94a3b8; }
+
+  .item-card .card-desc { font-size: 0.8rem; color: var(--muted); margin-bottom: 10px; }
+
+  .value-box {
+    background: var(--card2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px;
+    font-family: 'Courier New', monospace; font-size: 0.82rem;
+    color: #a5f3fc; word-break: break-all;
+    position: relative; margin-bottom: 10px;
+    max-height: 80px; overflow-y: auto;
+  }
+  .value-box.hidden-val { filter: blur(5px); user-select: none; }
+  .value-box.hidden-val:hover { filter: blur(0); }
+
+  .card-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.7); z-index: 1000;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 28px;
+    width: 100%; max-width: 520px; max-height: 90vh;
+    overflow-y: auto; position: relative;
+  }
+  .modal h2 { margin-bottom: 20px; font-size: 1.1rem; }
+  .modal .close-btn {
+    position: absolute; top: 16px; right: 16px;
+    background: none; border: none; color: var(--muted);
+    font-size: 1.4rem; cursor: pointer;
+  }
+  .modal .close-btn:hover { color: var(--red); }
+
+  /* FORM */
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 0.82rem; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%; background: var(--card2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px; color: var(--text);
+    font-size: 0.88rem; outline: none; transition: border-color .2s;
+    font-family: inherit;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    border-color: var(--accent);
+  }
+  .form-group textarea { resize: vertical; min-height: 80px; }
+  .form-group select option { background: var(--card2); }
+
+  /* BUSCA */
+  .search-bar {
+    width: 100%; background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 16px; color: var(--text);
+    font-size: 0.9rem; outline: none; margin-bottom: 20px;
+    transition: border-color .2s;
+  }
+  .search-bar:focus { border-color: var(--accent); }
+
+  /* VAZIO */
+  .empty-state {
+    text-align: center; padding: 60px 20px; color: var(--muted);
+  }
+  .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--green); color: #fff;
+    padding: 12px 20px; border-radius: 10px;
+    font-weight: 600; font-size: 0.88rem;
+    z-index: 9999; opacity: 0; transform: translateY(20px);
+    transition: all .3s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.error { background: var(--red); }
+
+  /* STATS */
+  .stats { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 18px;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 0.85rem;
+  }
+  .stat-card .num { font-size: 1.3rem; font-weight: 700; color: var(--accent); }
+
+  /* MODAL EXPORT */
+  .export-area {
+    background: var(--card2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px;
+    font-family: 'Courier New', monospace; font-size: 0.78rem;
+    color: #a5f3fc; white-space: pre-wrap; word-break: break-all;
+    max-height: 300px; overflow-y: auto; margin-bottom: 14px;
+  }
+
+  @media (max-width: 600px) {
+    .grid { grid-template-columns: 1fr; }
+    header { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span>🔐</span> Cofre de Configurações</h1>
+  <div class="header-btns">
+    <button class="btn btn-primary" onclick="openModal('add')">➕ Novo Item</button>
+    <button class="btn btn-purple" onclick="openModal('addTab')">📁 Nova Especialidade</button>
+    <button class="btn btn-green" onclick="exportarHTML()">⬇️ Baixar HTML</button>
+    <button class="btn btn-yellow" onclick="openModal('export')">📋 Ver/Copiar</button>
+    <button class="btn btn-ghost" onclick="openModal('import')">📤 Importar</button>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- STATS -->
+  <div class="stats" id="statsBar"></div>
+
+  <!-- BUSCA -->
+  <input class="search-bar" type="text" id="searchInput" placeholder="🔍 Buscar por nome, tipo ou valor..." oninput="renderItems()">
+
+  <!-- ABAS -->
+  <div class="tabs-wrap" id="tabsWrap"></div>
+
+  <!-- GRID -->
+  <div class="grid" id="itemsGrid"></div>
+
+</div>
+
+<!-- MODAL ADICIONAR/EDITAR -->
+<div class="modal-overlay" id="modalAdd">
+  <div class="modal">
+    <button class="close-btn" onclick="closeModal('add')">✕</button>
+    <h2 id="modalAddTitle">➕ Novo Item</h2>
+    <div class="form-group">
+      <label>Nome / Rótulo *</label>
+      <input type="text" id="fNome" placeholder="Ex: API Key OpenAI, Link do Projeto...">
+    </div>
+    <div class="form-group">
+      <label>Tipo *</label>
+      <select id="fTipo">
+        <option value="api">🔑 Chave API</option>
+        <option value="token">🪙 Token</option>
+        <option value="link">🔗 Link / URL</option>
+        <option value="comando">⚡ Comando</option>
+        <option value="outro">📌 Outro</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Especialidade (Aba) *</label>
+      <select id="fAba"></select>
+    </div>
+    <div class="form-group">
+      <label>Valor / Conteúdo *</label>
+      <textarea id="fValor" placeholder="Cole aqui a chave, link, comando..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>Descrição (opcional)</label>
+      <input type="text" id="fDesc" placeholder="Para que serve este item?">
+    </div>
+    <div class="form-group">
+      <label>
+        <input type="checkbox" id="fOcultar"> &nbsp;🙈 Ocultar valor por padrão (hover para ver)
+      </label>
+    </div>
+    <input type="hidden" id="fEditId">
+    <div style="display:flex;gap:10px;margin-top:8px;">
+      <button class="btn btn-primary" onclick="salvarItem()" style="flex:1">💾 Salvar</button>
+      <button class="btn btn-ghost" onclick="closeModal('add')" style="flex:1">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NOVA ABA -->
+<div class="modal-overlay" id="modalAddTab">
+  <div class="modal">
+    <button class="close-btn" onclick="closeModal('addTab')">✕</button>
+    <h2>📁 Nova Especialidade</h2>
+    <div class="form-group">
+      <label>Nome da Especialidade *</label>
+      <input type="text" id="fTabNome" placeholder="Ex: Jurídico, IA Tools, Projetos...">
+    </div>
+    <div class="form-group">
+      <label>Ícone (emoji)</label>
+      <input type="text" id="fTabIcon" placeholder="⚖️" maxlength="4">
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px;">
+      <button class="btn btn-purple" onclick="salvarAba()" style="flex:1">💾 Criar</button>
+      <button class="btn btn-ghost" onclick="closeModal('addTab')" style="flex:1">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EXPORT -->
+<div class="modal-overlay" id="modalExport">
+  <div class="modal" style="max-width:640px">
+    <button class="close-btn" onclick="closeModal('export')">✕</button>
+    <h2>📋 Exportar Dados (JSON)</h2>
+    <div class="export-area" id="exportArea"></div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-green" onclick="copiarExport()" style="flex:1">📋 Copiar JSON</button>
+      <button class="btn btn-ghost" onclick="closeModal('export')" style="flex:1">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL IMPORT -->
+<div class="modal-overlay" id="modalImport">
+  <div class="modal">
+    <button class="close-btn" onclick="closeModal('import')">✕</button>
+    <h2>📤 Importar Dados (JSON)</h2>
+    <div class="form-group">
+      <label>Cole o JSON exportado anteriormente:</label>
+      <textarea id="importArea" style="min-height:150px;font-family:monospace;font-size:.8rem" placeholder='{"abas":[...],"itens":[...]}'></textarea>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-yellow" onclick="importarDados()" style="flex:1">✅ Importar</button>
+      <button class="btn btn-ghost" onclick="closeModal('import')" style="flex:1">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ===================== ESTADO =====================
+let state = {
+  abas: [
+    { id: 'geral', nome: 'Geral', icon: '📌' },
+    { id: 'juridico', nome: 'Jurídico', icon: '⚖️' },
+    { id: 'ia', nome: 'IA & APIs', icon: '🤖' }
+  ],
+  itens: [],
+  abaAtiva: 'todas'
+};
+
+// ===================== INIT =====================
+function init() {
+  const saved = localStorage.getItem('cofre_dados');
+  if (saved) {
+    try { state = JSON.parse(saved); } catch(e) {}
+  }
+  if (!state.abaAtiva) state.abaAtiva = 'todas';
+  render();
+}
+
+function salvar() {
+  localStorage.setItem('cofre_dados', JSON.stringify(state));
+}
+
+// ===================== RENDER =====================
+function render() {
+  renderTabs();
+  renderItems();
+  renderStats();
+}
+
+function renderTabs() {
+  const wrap = document.getElementById('tabsWrap');
+  let html = `<div class="tab ${state.abaAtiva === 'todas' ? 'active' : ''}" onclick="setAba('todas')">🗂️ Todas</div>`;
+  state.abas.forEach(a => {
+    html += `<div class="tab ${state.abaAtiva === a.id ? 'active' : ''}" onclick="setAba('${a.id}')">
+      ${a.icon} ${a.nome}
+      <span class="del-tab" onclick="event.stopPropagation();deletarAba('${a.id}')" title="Remover aba">✕</span>
+    </div>`;
+  });
+  wrap.innerHTML = html;
+}
+
+function renderItems() {
+  const grid = document.getElementById('itemsGrid');
+  const busca = document.getElementById('searchInput').value.toLowerCase();
+  let itens = state.itens;
+
+  if (state.abaAtiva !== 'todas') {
+    itens = itens.filter(i => i.aba === state.abaAtiva);
+  }
+  if (busca) {
+    itens = itens.filter(i =>
+      i.nome.toLowerCase().includes(busca) ||
+      i.tipo.toLowerCase().includes(busca) ||
+      i.valor.toLowerCase().includes(busca) ||
+      (i.desc && i.desc.toLowerCase().includes(busca))
+    );
+  }
+
+  if (itens.length === 0) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <div class="icon">🔐</div>
+      <div>Nenhum item aqui ainda.<br>Clique em <strong>➕ Novo Item</strong> para começar.</div>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = itens.map(item => {
+    const tipoLabel = { api:'🔑 API Key', token:'🪙 Token', link:'🔗 Link', comando:'⚡ Comando', outro:'📌 Outro' };
+    const tipoClass = { api:'type-api', token:'type-token', link:'type-link', comando:'type-comando', outro:'type-outro' };
+    const abaObj = state.abas.find(a => a.id === item.aba);
+    const abaLabel = abaObj ? `${abaObj.icon} ${abaObj.nome}` : '—';
+    const isLink = item.tipo === 'link';
+    const valorDisplay = isLink
+      ? `<a href="${item.valor}" target="_blank" style="color:#60a5fa;word-break:break-all">${item.valor}</a>`
+      : item.valor;
+
+    return `<div class="item-card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">${item.nome}</div>
+          <div style="font-size:.75rem;color:var(--muted);margin-top:3px">${abaLabel}</div>
+        </div>
+        <span class="card-type ${tipoClass[item.tipo] || 'type-outro'}">${tipoLabel[item.tipo] || item.tipo}</span>
+      </div>
+      ${item.desc ? `<div class="card-desc">${item.desc}</div>` : ''}
+      <div class="value-box ${item.ocultar ? 'hidden-val' : ''}" id="vbox_${item.id}">${valorDisplay}</div>
+      <div class="card-actions">
+        <button class="btn btn-ghost btn-sm" onclick="copiarValor('${item.id}')">📋 Copiar</button>
+        ${isLink ? `<button class="btn btn-ghost btn-sm" onclick="window.open('${item.valor}','_blank')">🔗 Abrir</button>` : ''}
+        <button class="btn btn-ghost btn-sm" onclick="toggleOcultar('${item.id}')">${item.ocultar ? '👁️ Mostrar' : '🙈 Ocultar'}</button>
+        <button class="btn btn-ghost btn-sm" onclick="editarItem('${item.id}')">✏️ Editar</button>
+        <button class="btn btn-red btn-sm" onclick="deletarItem('${item.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderStats() {
+  const bar = document.getElementById('statsBar');
+  const total = state.itens.length;
+  const apis = state.itens.filter(i => i.tipo === 'api').length;
+  const links = state.itens.filter(i => i.tipo === 'link').length;
+  const tokens = state.itens.filter(i => i.tipo === 'token').length;
+  const cmds = state.itens.filter(i => i.tipo === 'comando').length;
+  bar.innerHTML = `
+    <div class="stat-card"><span class="num">${total}</span> Total</div>
+    <div class="stat-card"><span class="num" style="color:#60a5fa">${apis}</span> APIs</div>
+    <div class="stat-card"><span class="num" style="color:#c084fc">${tokens}</span> Tokens</div>
+    <div class="stat-card"><span class="num" style="color:#4ade80">${links}</span> Links</div>
+    <div class="stat-card"><span class="num" style="color:#fbbf24">${cmds}</span> Comandos</div>
+    <div class="stat-card"><span class="num" style="color:#94a3b8">${state.abas.length}</span> Especialidades</div>
+  `;
+}
+
+// ===================== ABAS =====================
+function setAba(id) {
+  state.abaAtiva = id;
+  render();
+}
+
+function salvarAba() {
+  const nome = document.getElementById('fTabNome').value.trim();
+  const icon = document.getElementById('fTabIcon').value.trim() || '📁';
+  if (!nome) { toast('Informe o nome da especialidade!', true); return; }
+  const id = 'aba_' + Date.now();
+  state.abas.push({ id, nome, icon });
+  salvar(); render();
+  closeModal('addTab');
+  document.getElementById('fTabNome').value = '';
+  document.getElementById('fTabIcon').value = '';
+  toast(`✅ Especialidade "${nome}" criada!`);
+}
+
+function deletarAba(id) {
+  const aba = state.abas.find(a => a.id === id);
+  if (!aba) return;
+  if (!confirm(`Remover a especialidade "${aba.nome}"?\nOs itens desta aba serão movidos para "Geral".`)) return;
+  state.itens.forEach(i => { if (i.aba === id) i.aba = 'geral'; });
+  state.abas = state.abas.filter(a => a.id !== id);
+  if (state.abaAtiva === id) state.abaAtiva = 'todas';
+  salvar(); render();
+  toast(`🗑️ Especialidade removida.`);
+}
+
+// ===================== ITENS =====================
+function openModal(tipo) {
+  if (tipo === 'add') {
+    preencherSelectAbas();
+    document.getElementById('fEditId').value = '';
+    document.getElementById('fNome').value = '';
+    document.getElementById('fTipo').value = 'api';
+    document.getElementById('fValor').value = '';
+    document.getElementById('fDesc').value = '';
+    document.getElementById('fOcultar').checked = false;
+    document.getElementById('modalAddTitle').textContent = '➕ Novo Item';
+  }
+  if (tipo === 'export') {
+    document.getElementById('exportArea').textContent = JSON.stringify(state, null, 2);
+  }
+  document.getElementById('modal' + tipo.charAt(0).toUpperCase() + tipo.slice(1)).classList.add('open');
+}
+
+function closeModal(tipo) {
+  document.getElementById('modal' + tipo.charAt(0).toUpperCase() + tipo.slice(1)).classList.remove('open');
+}
+
+function preencherSelectAbas(selecionado) {
+  const sel = document.getElementById('fAba');
+  sel.innerHTML = state.abas.map(a =>
+    `<option value="${a.id}" ${a.id === selecionado ? 'selected' : ''}>${a.icon} ${a.nome}</option>`
+  ).join('');
+}
+
+function salvarItem() {
+  const nome = document.getElementById('fNome').value.trim();
+  const tipo = document.getElementById('fTipo').value;
+  const aba = document.getElementById('fAba').value;
+  const valor = document.getElementById('fValor').value.trim();
+  const desc = document.getElementById('fDesc').value.trim();
+  const ocultar = document.getElementById('fOcultar').checked;
+  const editId = document.getElementById('fEditId').value;
+
+  if (!nome || !valor) { toast('Nome e Valor são obrigatórios!', true); return; }
+
+  if (editId) {
+    const idx = state.itens.findIndex(i => i.id === editId);
+    if (idx !== -1) {
+      state.itens[idx] = { ...state.itens[idx], nome, tipo, aba, valor, desc, ocultar };
+      toast('✅ Item atualizado!');
+    }
+  } else {
+    state.itens.push({ id: 'item_' + Date.now(), nome, tipo, aba, valor, desc, ocultar });
+    toast('✅ Item adicionado!');
+  }
+  salvar(); render();
+  closeModal('add');
+}
+
+function editarItem(id) {
+  const item = state.itens.find(i => i.id === id);
+  if (!item) return;
+  preencherSelectAbas(item.aba);
+  document.getElementById('fEditId').value = item.id;
+  document.getElementById('fNome').value = item.nome;
+  document.getElementById('fTipo').value = item.tipo;
+  document.getElementById('fValor').value = item.valor;
+  document.getElementById('fDesc').value = item.desc || '';
+  document.getElementById('fOcultar').checked = item.ocultar || false;
+  document.getElementById('modalAddTitle').textContent = '✏️ Editar Item';
+  openModal('add');
+}
+
+function deletarItem(id) {
+  const item = state.itens.find(i => i.id === id);
+  if (!item) return;
+  if (!confirm(`Deletar "${item.nome}"?`)) return;
+  state.itens = state.itens.filter(i => i.id !== id);
+  salvar(); render();
+  toast('🗑️ Item removido.');
+}
+
+function toggleOcultar(id) {
+  const item = state.itens.find(i => i.id === id);
+  if (!item) return;
+  item.ocultar = !item.ocultar;
+  salvar(); render();
+}
+
+function copiarValor(id) {
+  const item = state.itens.find(i => i.id === id);
+  if (!item) return;
+  navigator.clipboard.writeText(item.valor).then(() => toast('📋 Copiado!')).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = item.valor; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    toast('📋 Copiado!');
+  });
+}
+
+// ===================== EXPORT / IMPORT =====================
+function copiarExport() {
+  const txt = document.getElementById('exportArea').textContent;
+  navigator.clipboard.writeText(txt).then(() => toast('📋 JSON copiado!')).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = txt; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    toast('📋 JSON copiado!');
+  });
+}
+
+function importarDados() {
+  const txt = document.getElementById('importArea').value.trim();
+  if (!txt) { toast('Cole o JSON primeiro!', true); return; }
+  try {
+    const dados = JSON.parse(txt);
+    if (!dados.abas || !dados.itens) throw new Error();
+    if (!confirm('Isso vai SUBSTITUIR todos os dados atuais. Confirma?')) return;
+    state = { ...dados, abaAtiva: 'todas' };
+    salvar(); render();
+    closeModal('import');
+    toast('✅ Dados importados com sucesso!');
+  } catch(e) {
+    toast('❌ JSON inválido! Verifique o formato.', true);
+  }
+}
+
+function exportarHTML() {
+  const dadosJSON = JSON.stringify(state);
+  const htmlAtual = document.documentElement.outerHTML;
+  // Injeta os dados salvos no HTML exportado
+  const htmlFinal = htmlAtual.replace(
+    "localStorage.getItem('cofre_dados')",
+    `'${dadosJSON.replace(/'/g, "\\'")}'`
+  ).replace(
+    "let state = {\n  abas: [\n    { id: 'geral', nome: 'Geral', icon: '📌' },\n    { id: 'juridico', nome: 'Jurídico', icon: '⚖️' },\n    { id: 'ia', nome: 'IA & APIs', icon: '🤖' }\n  ],\n  itens: [],\n  abaAtiva: 'todas'\n};",
+    `let state = ${dadosJSON};`
+  );
+
+  const blob = new Blob([htmlFinal], { type: 'text/html;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'cofre-configuracoes.html';
+  a.click();
+  toast('⬇️ HTML baixado com todos os dados!');
+}
+
+// ===================== TOAST =====================
+function toast(msg, erro = false) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (erro ? ' error' : '');
+  setTimeout(() => el.className = 'toast', 3000);
+}
+
+// Fechar modal clicando fora
+document.querySelectorAll('.modal-overlay').forEach(el => {
+  el.addEventListener('click', e => {
+    if (e.target === el) el.classList.remove('open');
+  });
+});
+
+init();
+</script>
+<script>// JavaScript extra
+console.log("Playground pronto!");</script></body>
+</html>

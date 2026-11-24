@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Colecionador de Código</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: Arial, sans-serif;
+  background: #1a1a2e;
+  color: #eee;
+  min-height: 100vh;
+  padding: 20px;
+}
+h1 { text-align: center; color: #00d4ff; margin-bottom: 6px; font-size: 1.4em; }
+.sub { text-align: center; color: #aaa; font-size: 0.85em; margin-bottom: 20px; }
+.card {
+  background: #16213e;
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 16px;
+  border: 1px solid #0f3460;
+}
+.card h2 { color: #00d4ff; font-size: 1em; margin-bottom: 12px; }
+#dropZone {
+  border: 2px dashed #00d4ff;
+  border-radius: 10px;
+  padding: 30px;
+  text-align: center;
+  cursor: pointer;
+  background: #0d1b2a;
+  transition: background 0.3s;
+}
+#dropZone:hover, #dropZone.dragover { background: #1a3a5c; }
+#dropZone .icon { font-size: 2.5em; }
+#dropZone p { color: #aaa; font-size: 0.9em; margin-top: 8px; }
+#fileInput { display: none; }
+.arquivo-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #0d1b2a;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  border: 1px solid #0f3460;
+  font-size: 0.85em;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.arquivo-nome { color: #00d4ff; }
+.badge {
+  background: #0f3460;
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 0.75em;
+  color: #aaa;
+  display: inline-block;
+}
+.badge-green { background: #1b5e20; color: #69f0ae; }
+.badge-blue  { background: #0d47a1; color: #90caf9; }
+.badge-orange{ background: #e65100; color: #ffcc80; }
+button {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9em;
+  font-weight: bold;
+  transition: opacity 0.2s;
+}
+button:hover { opacity: 0.85; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-blue   { background: #00d4ff; color: #000; }
+.btn-green  { background: #00c853; color: #000; }
+.btn-orange { background: #ff9800; color: #000; }
+.btn-red    { background: #f44336; color: #fff; }
+.btns { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+.modo-tabs {
+  display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;
+}
+.tab {
+  padding: 7px 14px; border-radius: 20px;
+  border: 1px solid #0f3460; background: transparent;
+  color: #aaa; cursor: pointer; font-size: 0.82em;
+}
+.tab.ativo { background: #00d4ff; color: #000; border-color: #00d4ff; font-weight: bold; }
+textarea {
+  width: 100%; background: #0d1b2a; color: #eee;
+  border: 1px solid #0f3460; border-radius: 8px;
+  padding: 12px; font-family: monospace;
+  font-size: 0.8em; resize: vertical;
+}
+.progresso-bar {
+  width: 100%; height: 10px; background: #0f3460;
+  border-radius: 10px; overflow: hidden; margin-top: 10px;
+}
+.progresso-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00d4ff, #00c853);
+  width: 0%; transition: width 0.3s; border-radius: 10px;
+}
+.progresso-txt { text-align: center; font-size: 0.8em; color: #aaa; margin-top: 6px; }
+.dica {
+  background: #0f3460; border-left: 3px solid #ff9800;
+  padding: 10px 14px; border-radius: 0 8px 8px 0;
+  font-size: 0.82em; color: #aaa; margin-top: 10px;
+}
+.dica strong { color: #ff9800; }
+#resultBox { display: none; }
+.stats { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<h1>📦 Colecionador de Código</h1>
+<p class="sub">Analisa seus projetos e gera um resumo que qualquer IA entende — econômico e completo</p>
+
+<!-- UPLOAD -->
+<div class="card">
+  <h2>📁 1. Adicione os arquivos</h2>
+  <div id="dropZone" onclick="document.getElementById('fileInput').click()">
+    <div class="icon">📂</div>
+    <p>Clique ou arraste — HTML, CSS, JS, JSON, TXT, ZIP</p>
+    <p style="font-size:0.75em;margin-top:4px;">Pode jogar quantos quiser de uma vez</p>
+  </div>
+  <input type="file" id="fileInput" multiple
+    accept=".html,.htm,.css,.js,.json,.txt,.py,.md">
+  <div id="listaArquivos" style="margin-top:12px;"></div>
+</div>
+
+<!-- MODO -->
+<div class="card">
+  <h2>⚙️ 2. Tipo de resumo</h2>
+  <div class="modo-tabs">
+    <button class="tab ativo" onclick="setModo('completo',this)">📋 Completo</button>
+    <button class="tab" onclick="setModo('rapido',this)">⚡ Rápido</button>
+    <button class="tab" onclick="setModo('funcoes',this)">🔧 Só Funções</button>
+    <button class="tab" onclick="setModo('mapa',this)">🗺️ Mapa Visual</button>
+  </div>
+  <div class="dica">
+    <strong>Completo</strong> = tudo que a IA precisa saber para ajudar.<br>
+    <strong>Rápido</strong> = resumo curto, mais econômico.<br>
+    <strong>Só Funções</strong> = lista todas as funções e o que fazem.<br>
+    <strong>Mapa Visual</strong> = mostra como os arquivos se conectam.
+  </div>
+</div>
+
+<!-- PROCESSAR -->
+<div class="card">
+  <h2>🚀 3. Analisar</h2>
+  <div class="btns">
+    <button class="btn-blue" id="btnAnalisar" onclick="analisar()" disabled>
+      🔍 Analisar Projeto
+    </button>
+    <button class="btn-red" onclick="limpar()">🗑️ Limpar</button>
+  </div>
+  <div class="progresso-bar" id="progBar" style="display:none">
+    <div class="progresso-fill" id="progFill"></div>
+  </div>
+  <div class="progresso-txt" id="progTxt"></div>
+</div>
+
+<!-- RESULTADO -->
+<div class="card" id="resultBox">
+  <h2>✅ 4. Resumo gerado</h2>
+  <div class="stats" id="statsResult"></div>
+  <textarea id="resultText" style="min-height:300px;" readonly></textarea>
+  <div class="btns" style="margin-top:10px;">
+    <button class="btn-green" onclick="copiar()">📋 Copiar e Colar na IA</button>
+    <button class="btn-orange" onclick="baixar()">⬇️ Baixar Resumo</button>
+    <button class="btn-blue" onclick="gerarPergunta()">💬 Gerar Pergunta Pronta</button>
+  </div>
+  <div id="perguntaBox" style="display:none; margin-top:12px;">
+    <p style="font-size:0.85em;color:#aaa;margin-bottom:6px;">
+      💬 Cole isso na IA junto com o resumo:
+    </p>
+    <textarea id="perguntaText" style="min-height:100px;"></textarea>
+    <button class="btn-green" style="margin-top:8px;" onclick="copiarPergunta()">
+      📋 Copiar Pergunta
+    </button>
+  </div>
+</div>
+
+<script>
+let arquivos = [];
+let modoAtual = 'completo';
+let resumoGerado = '';
+
+// DRAG DROP
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  adicionarArquivos(Array.from(e.dataTransfer.files));
+});
+document.getElementById('fileInput').addEventListener('change', e => {
+  adicionarArquivos(Array.from(e.target.files));
+  e.target.value = '';
+});
+
+function adicionarArquivos(novos) {
+  novos.forEach(f => {
+    if (!arquivos.find(a => a.name === f.name)) arquivos.push(f);
+  });
+  renderLista();
+  document.getElementById('btnAnalisar').disabled = arquivos.length === 0;
+}
+
+function renderLista() {
+  const el = document.getElementById('listaArquivos');
+  if (!arquivos.length) { el.innerHTML = ''; return; }
+  el.innerHTML = arquivos.map((f,i) => `
+    <div class="arquivo-item">
+      <span class="arquivo-nome">${getIcone(f.name)} ${f.name}</span>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <span class="badge">${formatBytes(f.size)}</span>
+        <button onclick="remover(${i})" style="background:#f44336;color:#fff;border:none;
+          border-radius:6px;padding:3px 8px;cursor:pointer;font-size:0.75em;">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function remover(i) {
+  arquivos.splice(i,1);
+  renderLista();
+  document.getElementById('btnAnalisar').disabled = arquivos.length === 0;
+}
+
+function setModo(m, btn) {
+  modoAtual = m;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('ativo'));
+  btn.classList.add('ativo');
+}
+
+function setP(pct, txt) {
+  document.getElementById('progBar').style.display = 'block';
+  document.getElementById('progFill').style.width = pct + '%';
+  document.getElementById('progTxt').textContent = txt;
+}
+
+async function lerArquivo(f) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = e => res(e.target.result);
+    r.onerror = rej;
+    r.readAsText(f, 'UTF-8');
+  });
+}
+
+async function analisar() {
+  document.getElementById('btnAnalisar').disabled = true;
+  document.getElementById('resultBox').style.display = 'none';
+  document.getElementById('perguntaBox').style.display = 'none';
+  setP(5, 'Lendo arquivos...');
+
+  const conteudos = {};
+  for (let i = 0; i < arquivos.length; i++) {
+    try {
+      conteudos[arquivos[i].name] = await lerArquivo(arquivos[i]);
+    } catch(e) {
+      conteudos[arquivos[i].name] = '[Não foi possível ler este arquivo]';
+    }
+    setP(5 + Math.round((i+1)/arquivos.length*40), `Lendo: ${arquivos[i].name}`);
+    await sleep(20);
+  }
+
+  setP(50, 'Analisando estrutura...');
+  await sleep(30);
+
+  let resultado = '';
+
+  if (modoAtual === 'completo') resultado = gerarCompleto(conteudos);
+  else if (modoAtual === 'rapido') resultado = gerarRapido(conteudos);
+  else if (modoAtual === 'funcoes') resultado = gerarFuncoes(conteudos);
+  else if (modoAtual === 'mapa') resultado = gerarMapa(conteudos);
+
+  setP(100, '✅ Análise concluída!');
+  resumoGerado = resultado;
+
+  const tokens = Math.ceil(resultado.length / 4);
+  document.getElementById('statsResult').innerHTML = `
+    <span class="badge">${arquivos.length} arquivos</span>
+    <span class="badge badge-green">~${tokens.toLocaleString()} tokens</span>
+    <span class="badge badge-blue">${formatBytes(new Blob([resultado]).size)}</span>
+  `;
+  document.getElementById('resultText').value = resultado;
+  document.getElementById('resultBox').style.display = 'block';
+  document.getElementById('btnAnalisar').disabled = false;
+}
+
+// ===== MODO COMPLETO =====
+function gerarCompleto(conteudos) {
+  let out = '';
+  out += `╔══════════════════════════════════════╗\n`;
+  out += `║        MAPA DO PROJETO               ║\n`;
+  out += `║  Gerado em: ${new Date().toLocaleString('pt-BR')}  \n`;
+  out += `╚══════════════════════════════════════╝\n\n`;
+  out += `TOTAL DE ARQUIVOS: ${Object.keys(conteudos).length}\n\n`;
+
+  for (const [nome, conteudo] of Object.entries(conteudos)) {
+    const linhas = conteudo.split('\n');
+    out += `${'═'.repeat(50)}\n`;
+    out += `📄 ARQUIVO: ${nome}\n`;
+    out += `   Linhas: ${linhas.length} | Tamanho: ${formatBytes(conteudo.length)}\n`;
+    out += `${'─'.repeat(50)}\n`;
+
+    const tipo = nome.split('.').pop().toLowerCase();
+
+    if (tipo === 'js' || tipo === 'html') {
+      const funcoes = extrairFuncoes(conteudo);
+      if (funcoes.length) {
+        out += `🔧 FUNÇÕES (${funcoes.length}):\n`;
+        funcoes.forEach(f => out += `   • ${f}\n`);
+      }
+      const eventos = extrairEventos(conteudo);
+      if (eventos.length) {
+        out += `🖱️ EVENTOS:\n`;
+        eventos.forEach(e => out += `   • ${e}\n`);
+      }
+      const apis = extrairAPIs(conteudo);
+      if (apis.length) {
+        out += `🌐 CONEXÕES/APIs:\n`;
+        apis.forEach(a => out += `   • ${a}\n`);
+      }
+      const variaveis = extrairVariaveis(conteudo);
+      if (variaveis.length) {
+        out += `📦 VARIÁVEIS PRINCIPAIS:\n`;
+        variaveis.slice(0,10).forEach(v => out += `   • ${v}\n`);
+      }
+    }
+
+    if (tipo === 'json') {
+      try {
+        const obj = JSON.parse(conteudo);
+        const chaves = Object.keys(obj).slice(0,15);
+        out += `🗝️ CHAVES JSON: ${chaves.join(', ')}\n`;
+      } catch(e) {
+        out += `   (JSON inválido ou muito complexo)\n`;
+      }
+    }
+
+    if (tipo === 'css') {
+      const seletores = extrairSeletores(conteudo);
+      out += `🎨 SELETORES CSS (${seletores.length}): ${seletores.slice(0,8).join(', ')}${seletores.length>8?'...':''}\n`;
+    }
+
+    // Primeiras 3 linhas de contexto
+    const preview = linhas.slice(0,3).join('\n').trim();
+    if (preview) {
+      out += `📌 INÍCIO DO ARQUIVO:\n`;
+      out += `   ${preview.replace(/\n/g,'\n   ')}\n`;
+    }
+    out += '\n';
+  }
+
+  out += `${'═'.repeat(50)}\n`;
+  out += `FIM DO MAPA DO PROJETO\n`;
+  return out;
+}
+
+// ===== MODO RÁPIDO =====
+function gerarRapido(conteudos) {
+  let out = `# RESUMO RÁPIDO DO PROJETO\n`;
+  out += `Arquivos: ${Object.keys(conteudos).length} | Data: ${new Date().toLocaleString('pt-BR')}\n\n`;
+  for (const [nome, conteudo] of Object.entries(conteudos)) {
+    const linhas = conteudo.split('\n').length;
+    const funcoes = extrairFuncoes(conteudo);
+    out += `## ${nome} (${linhas} linhas)\n`;
+    if (funcoes.length) out += `Funções: ${funcoes.slice(0,5).join(', ')}${funcoes.length>5?'...':''}\n`;
+    out += '\n';
+  }
+  return out;
+}
+
+// ===== MODO SÓ FUNÇÕES =====
+function gerarFuncoes(conteudos) {
+  let out = `# CATÁLOGO DE FUNÇÕES\n\n`;
+  for (const [nome, conteudo] of Object.entries(conteudos)) {
+    const funcoes = extrairFuncoes(conteudo);
+    if (!funcoes.length) continue;
+    out += `## ${nome}\n`;
+    funcoes.forEach(f => {
+      out += `  → ${f}\n`;
+      const desc = tentarDescreverFuncao(conteudo, f);
+      if (desc) out += `     ${desc}\n`;
+    });
+    out += '\n';
+  }
+  return out;
+}
+
+// ===== MODO MAPA VISUAL =====
+function gerarMapa(conteudos) {
+  let out = `# MAPA DE CONEXÕES DO PROJETO\n\n`;
+  const nomes = Object.keys(conteudos);
+
+  out += `ARQUIVOS:\n`;
+  nomes.forEach(n => {
+    const tipo = n.split('.').pop().toUpperCase();
+    const linhas = conteudos[n].split('\n').length;
+    out += `  [${tipo}] ${n} — ${linhas} linhas\n`;
+  });
+  out += '\n';
+
+  out += `CONEXÕES DETECTADAS:\n`;
+  nomes.forEach(nome => {
+    const conteudo = conteudos[nome];
+    nomes.forEach(outro => {
+      if (outro === nome) return;
+      const nomeSimples = outro.replace(/\.[^.]+$/,'');
+      if (conteudo.includes(outro) || conteudo.includes(nomeSimples)) {
+        out += `  ${nome} ──→ ${outro}\n`;
+      }
+    });
+  });
+  out += '\n';
+
+  out += `APIs E SERVIÇOS EXTERNOS:\n`;
+  const todosAPIs = new Set();
+  nomes.forEach(n => {
+    extrairAPIs(conteudos[n]).forEach(a => todosAPIs.add(a));
+  });
+  todosAPIs.forEach(a => out += `  🌐 ${a}\n`);
+
+  return out;
+}
+
+// ===== EXTRATORES =====
+function extrairFuncoes(codigo) {
+  const resultado = new Set();
+  const padroes = [
+    /function\s+(\w+)\s*\(/g,
+    /(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s*)?\(/g,
+    /(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s*)?function/g,
+    /(\w+)\s*:\s*(?:async\s*)?function/g,
+    /async\s+function\s+(\w+)/g,
+  ];
+  padroes.forEach(p => {
+    let m;
+    const re = new RegExp(p.source, 'g');
+    while ((m = re.exec(codigo)) !== null) {
+      if (m[1] && m[1].length > 2 && !['if','for','while','switch'].includes(m[1])) {
+        resultado.add(m[1] + '()');
+      }
+    }
+  });
+  return [...resultado].slice(0, 30);
+}
+
+function extrairEventos(codigo) {
+  const resultado = new Set();
+  const re = /addEventListener\s*\(\s*['"](\w+)['"]/g;
+  let m;
+  while ((m = re.exec(codigo)) !== null) resultado.add('on' + m[1]);
+  const re2 = /on(\w+)\s*=/g;
+  while ((m = re2.exec(codigo)) !== null) resultado.add('on' + m[1]);
+  return [...resultado].slice(0,10);
+}
+
+function extrairAPIs(codigo) {
+  const resultado = new Set();
+  const padroes = [
+    /fetch\s*\(\s*['"`]([^'"`]+)/g,
+    /axios\.\w+\s*\(\s*['"`]([^'"`]+)/g,
+    /supabase/gi,
+    /firebase/gi,
+    /openai/gi,
+    /anthropic/gi,
+    /gemini/gi,
+    /ollama/gi,
+    /neon/gi,
+    /localStorage/g,
+    /indexedDB/gi,
+  ];
+  padroes.forEach(p => {
+    const re = new RegExp(p.source, p.flags);
+    let m;
+    while ((m = re.exec(codigo)) !== null) {
+      resultado.add(m[1] ? m[1].substring(0,50) : m[0].substring(0,30));
+    }
+  });
+  return [...resultado].slice(0,10);
+}
+
+function extrairVariaveis(codigo) {
+  const resultado = new Set();
+  const re = /(?:const|let|var)\s+(\w+)\s*=/g;
+  let m;
+  while ((m = re.exec(codigo)) !== null) {
+    if (m[1].length > 3 && !['true','false','null'].includes(m[1])) {
+      resultado.add(m[1]);
+    }
+  }
+  return [...resultado].slice(0,15);
+}
+
+function extrairSeletores(css) {
+  const resultado = [];
+  const re = /([.#]?[\w-]+)\s*\{/g;
+  let m;
+  while ((m = re.exec(css)) !== null) {
+    if (!resultado.includes(m[1])) resultado.push(m[1]);
+  }
+  return resultado.slice(0,20);
+}
+
+function tentarDescreverFuncao(codigo, nomeFuncao) {
+  const nome = nomeFuncao.replace('()','');
+  const re = new RegExp(`(?:function\\s+${nome}|${nome}\\s*=)[^{]*{([^}]{0,200})`, 'i');
+  const m = re.exec(codigo);
+  if (!m) return '';
+  const corpo = m[1].trim().split('\n')[0].trim();
+  if (corpo.length > 5 && corpo.length < 100) return `↳ ${corpo}`;
+  return '';
+}
+
+// ===== AÇÕES =====
+function copiar() {
+  navigator.clipboard.writeText(resumoGerado)
+    .then(() => alert('✅ Resumo copiado! Cole na IA.'));
+}
+
+function baixar() {
+  const blob = new Blob([resumoGerado], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'resumo_projeto.txt';
+  a.click();
+}
+
+function gerarPergunta() {
+  const pergunta = `Tenho um projeto com os seguintes arquivos e estrutura:
+
+${resumoGerado}
+
+Por favor:
+1. Me explica o que esse projeto faz
+2. Identifica o que pode estar com problema
+3. Sugere como melhorar
+4. Me diz quais arquivos são mais importantes`;
+
+  document.getElementById('perguntaText').value = pergunta;
+  document.getElementById('perguntaBox').style.display = 'block';
+}
+
+function copiarPergunta() {
+  navigator.clipboard.writeText(document.getElementById('perguntaText').value)
+    .then(() => alert('✅ Pergunta copiada! Cole na IA junto com o resumo.'));
+}
+
+function limpar() {
+  arquivos = [];
+  resumoGerado = '';
+  renderLista();
+  document.getElementById('resultBox').style.display = 'none';
+  document.getElementById('progBar').style.display = 'none';
+  document.getElementById('progTxt').textContent = '';
+  document.getElementById('btnAnalisar').disabled = true;
+  document.getElementById('perguntaBox').style.display = 'none';
+}
+
+function getIcone(nome) {
+  const ext = nome.split('.').pop().toLowerCase();
+  if (ext === 'html' || ext === 'htm') return '🌐';
+  if (ext === 'css') return '🎨';
+  if (ext === 'js') return '⚡';
+  if (ext === 'json') return '📋';
+  if (ext === 'py') return '🐍';
+  return '📄';
+}
+
+function formatBytes(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+  return (b/1048576).toFixed(1) + ' MB';
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r,ms)); }
+</script>
+</body>
+</html>

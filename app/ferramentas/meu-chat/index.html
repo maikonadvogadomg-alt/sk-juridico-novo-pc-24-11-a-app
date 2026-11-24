@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<title>Meu Chat</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div id="app">
+  <header id="topo">
+    <button class="ic" id="bt-conversas" title="Conversas" aria-label="Conversas">☰</button>
+    <div id="titulo"><b id="tit-conversa">Meu Chat</b><span id="tit-ia" class="mudo"></span></div>
+    <span class="chip" id="versao">v20/11-C</span>
+    <button class="ic" id="bt-contextos" title="Contextos" aria-label="Contextos">📌</button>
+    <button class="ic" id="bt-links" title="Links e navegador interno (não gasta IA)" aria-label="Links">🔗</button>
+    <button class="ic" id="bt-codigos" title="Meus códigos guardados (playground)" aria-label="Meus códigos">🧪</button>
+    <button class="ic" id="bt-gasto" title="Quanto gastou (tokens e reais)" aria-label="Gasto">💰</button>
+    <button class="ic" id="bt-guia" title="Guia: o que é cada app e como usar" aria-label="Guia">🧭</button>
+    <button class="ic" id="bt-memoria" title="Memória" aria-label="Memória">🧠</button>
+    <button class="ic" id="bt-config" title="Configurar" aria-label="Configurar">⚙️</button>
+  </header>
+
+  <main id="conversa" aria-live="polite"></main>
+
+  <div id="anexos" hidden></div>
+  <footer id="barra">
+    <div class="linha-op">
+      <label class="op" title="Ligado: o guia dos seus apps vai junto (gasta mais). Desligado: só vai quando você pergunta dos seus apps."><input type="checkbox" id="op-guia"> 🧭 Guia</label>
+      <label class="op" title="Pesquisar na internet antes de responder"><input type="checkbox" id="op-busca"> 🌐 Internet</label>
+      <label class="op" title="Falar as respostas em voz natural"><input type="checkbox" id="op-falar"> 🔊 Falar</label>
+      <label class="op" title="Conversa por voz: fala e escuta sem tocar"><input type="checkbox" id="op-maos"> 🙌 Mãos livres</label>
+      <label class="op" title="Quando a resposta terminar: apita, vibra e mostra notificação (bom para o Ollama, que demora)"><input type="checkbox" id="op-pronta"> 🔔 Avisar</label>
+      <label class="op" title="Enquanto ela escreve, a tela não apaga (o Android não pausa o app no meio)"><input type="checkbox" id="op-tela"> 🔆 Tela acesa</label>
+      <button class="op bt-op" id="bt-docs" type="button" title="Documentação de um projeto, só nesta pergunta">📄 Docs</button>
+      <label class="op" title="Manda a mesma pergunta para várias IAs (toque e segure para escolher quais)"><input type="checkbox" id="op-comparar"> ⚖️ Comparar</label>
+    </div>
+    <div class="linha-in">
+      <button class="ic" id="bt-foto" title="Mandar foto ou print" aria-label="Foto">📷</button>
+      <input type="file" id="in-foto" accept="image/*" multiple hidden>
+      <button class="ic" id="bt-arq" title="Mandar arquivo (texto, código) ou projeto .zip (abre aqui e você escolhe o que vai)" aria-label="Arquivo">📎</button>
+      <button class="ic" id="bt-qr" title="Ler QR Code (câmera ou print)" aria-label="Ler QR Code">🔳</button>
+      <input type="file" id="in-arq" multiple hidden>
+      <textarea id="entrada" rows="1" placeholder="Escreva, ou toque no 🎤…"></textarea>
+      <button class="ic grande" id="bt-mic" title="Falar" aria-label="Microfone">🎤</button>
+      <button class="ic grande primario" id="bt-enviar" title="Enviar" aria-label="Enviar">➤</button>
+    </div>
+  </footer>
+</div>
+
+<aside id="gaveta" class="painel" hidden>
+  <div class="cab"><b>💬 Conversas</b><button class="ic" data-fechar>✕</button></div>
+  <div class="linha"><button class="bt primario" id="bt-nova">＋ Nova conversa</button></div>
+  <input class="campo" id="busca-conv" placeholder="Procurar nas conversas…">
+  <div id="lista-conv"></div>
+  <hr>
+  <div class="linha"><button class="bt" id="bt-backup">⤓ Backup de tudo</button><button class="bt" id="bt-drive">📤 Drive</button><button class="bt" id="bt-restaurar">⤒ Restaurar</button></div>
+  <input type="file" id="in-restaurar" accept=".json,.zip,application/json" hidden>
+  <p class="mudo pequeno">Restaurar não apaga nada: o que for diferente entra ao lado.</p>
+</aside>
+
+<aside id="painel-memoria" class="painel" hidden>
+  <div class="cab"><b>🧠 Memória</b><button class="ic" data-fechar>✕</button></div>
+  <p class="mudo pequeno">Tudo aqui vai junto em TODA conversa. A IA também guarda sozinha o que for importante (aparece "🧠 guardei"). Uma coisa por linha. Pode editar e apagar.</p>
+  <textarea class="campo" id="memoria-texto" rows="14" placeholder="Ex.: Meu nome é Maikon. Sou advogado em MG. Prefiro respostas curtas e em português simples."></textarea>
+  <div class="linha"><button class="bt primario" id="bt-mem-salvar">💾 Salvar memória</button><span id="mem-status" class="mudo pequeno"></span></div>
+</aside>
+
+<aside id="painel-guia" class="painel" hidden>
+  <div class="cab"><b>🧭 Guia dos seus apps</b><button class="ic" data-fechar>✕</button></div>
+  <p class="mudo pequeno">O que é cada app, a versão atual e como usar. Toque no nome para abrir. 🔊 lê para você; 🤖 o chat explica.</p>
+  <input class="campo" id="guia-busca" placeholder="Procurar (ex.: juntar, terminal, jurídico, links)…" autocomplete="off">
+  <div id="guia-corpo"></div>
+</aside>
+
+<aside id="painel-links" class="painel" hidden>
+  <div class="cab"><b>🔗 Links</b><button class="ic" data-fechar>✕</button></div>
+  <p class="mudo pequeno">Guarde e abra links aqui dentro. <b>Não gasta nada da IA</b>: 📥 só coloca o texto da página na caixa, e você decide se manda.</p>
+  <input class="campo" id="link-novo" placeholder="Cole um endereço (https://…)" inputmode="url" autocomplete="off">
+  <div class="linha"><button class="bt primario" id="link-abrir">🌐 Abrir aqui</button><button class="bt" id="link-add">➕ Guardar</button></div>
+  <div id="links-corpo"></div>
+</aside>
+<aside id="painel-codigos" class="painel" hidden>
+  <div class="cab"><b>🧪 Meus códigos</b><button class="ic" data-fechar>✕</button></div>
+  <p class="mudo pequeno">Os códigos que você guardou (💾 nos blocos de código). ▶ abre no playground para ver e mexer; 💬 coloca na conversa para a IA continuar. Com o login, aparecem em qualquer aparelho.</p>
+  <input class="campo" id="cod-busca" placeholder="Procurar nos códigos…" autocomplete="off">
+  <div id="codigos-corpo"></div>
+</aside>
+<aside id="painel-gasto" class="painel" hidden>
+  <div class="cab"><b>💰 Gasto</b><button class="ic" data-fechar>✕</button></div>
+  <div id="gasto-corpo"></div>
+</aside>
+<aside id="painel-contextos" class="painel" hidden>
+  <div class="cab"><b>📌 Contextos</b><button class="ic" data-fechar>✕</button></div>
+  <div id="contextos-corpo"></div>
+</aside>
+
+<aside id="painel-config" class="painel" hidden>
+  <div class="cab"><b>⚙️ Configurar</b><button class="ic" data-fechar>✕</button></div>
+  <div id="config-corpo"></div>
+</aside>
+
+<div id="previa" hidden>
+  <div class="cab"><b id="previa-tit">👁 Prévia</b><span class="mudo pequeno" id="previa-tipo"></span><span style="flex:1"></span><button class="bt" id="previa-editar" title="Abrir o código para mexer (playground)">✏️ Editar</button><button class="bt" id="previa-recarregar">⟳</button><button class="bt" id="previa-baixar">⤓</button><button class="ic" id="previa-fechar">✕</button></div>
+  <div id="previa-editor" hidden><textarea id="previa-cod" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea><div class="linha"><button class="bt primario" id="previa-rodar">▶ Rodar de novo</button><button class="bt" id="previa-copiar">📋 Copiar</button><button class="bt" id="previa-guardar" title="Guardar em 🧪 Meus códigos">💾 Guardar</button><span class="mudo pequeno">Mexa no código e toque em ▶. Para a IA continuar daqui: 📋 Copiar e cole no chat.</span></div></div>
+  <iframe id="previa-quadro" sandbox="allow-scripts allow-forms allow-modals allow-popups" title="Prévia do código"></iframe>
+  <div id="previa-erros" class="pequeno"></div>
+</div>
+
+<div id="aviso" hidden></div>
+
+<script src="js/00-base.js"></script>
+<script src="js/10-banco.js"></script>
+<script src="js/11-online.js"></script>
+<script src="js/nuvem-embutida.js"></script>
+<script src="js/lib/nuvem-neon.js"></script>
+<script src="js/12-nuvem.js"></script>
+<script src="js/14-entrada.js"></script>
+<script src="js/20-provedores.js"></script>
+<script src="js/30-memoria.js"></script>
+<script src="js/33-contextos.js"></script>
+<script src="js/34-guia.js"></script>
+<script src="js/35-jeito.js"></script>
+<script src="js/36-gasto.js"></script>
+<script src="js/37-arquivos.js"></script>
+<script src="js/lib/playground-replit.js"></script>
+<script src="js/38-codigos.js"></script>
+<script src="js/39-qr.js"></script>
+<script src="js/41-pronto.js"></script>
+<script src="js/42-testar.js"></script>
+<script src="js/43-links.js"></script>
+<script src="js/44-docs.js"></script>
+<script src="js/lib/ferramentas-lista.js"></script>
+<script src="js/45-mesa.js"></script>
+<script src="js/40-voz.js"></script>
+<script src="js/50-internet.js"></script>
+<script src="js/60-previa.js"></script>
+<script src="js/70-texto.js"></script>
+<script src="js/80-chat.js"></script>
+<script src="js/lib/cofre-arquivo.js"></script>
+<script src="js/lib/guia-versoes.js"></script>
+<script src="js/lib/guia-maikon.js"></script>
+<script src="js/lib/jszip.min.js"></script>
+<script src="js/85-config.js"></script>
+<script src="js/87-cofre.js"></script>
+<script src="js/lib/reconhecer.js"></script>
+<script src="js/90-backup.js"></script>
+<script src="js/91-restaurar.js"></script>
+<script src="js/95-ponte-lab.js"></script>
+<script src="js/99-app.js"></script>
+<script>window.JANELA_BARRA = '#topo';</script>
+<script src="js/janela-pc.js"></script>
+</body>
+</html>

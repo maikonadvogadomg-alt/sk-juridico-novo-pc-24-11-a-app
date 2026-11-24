@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analisador de Projetos</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary: #667eea;
+    --secondary: #764ba2;
+    --success: #28a745;
+    --danger: #dc3545;
+    --light: #f8f9fa;
+    --dark: #1e1e1e;
+    --border: #e9ecef;
+}
+
+html, body {
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    color: #333;
+}
+
+body {
+    display: flex;
+}
+
+.app-container {
+    display: flex;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.sidebar {
+    width: 280px;
+    background: white;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    z-index: 100;
+    overflow-y: auto;
+}
+
+.sidebar-header {
+    padding: 20px;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    color: white;
+    text-align: center;
+}
+
+.sidebar-header h1 {
+    font-size: 1.5em;
+    margin-bottom: 5px;
+}
+
+.sidebar-menu {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px 0;
+}
+
+.menu-item {
+    padding: 15px 20px;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-left: 4px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #666;
+    font-weight: 500;
+}
+
+.menu-item:hover {
+    background: var(--light);
+    border-left-color: var(--primary);
+    color: var(--primary);
+}
+
+.menu-item.active {
+    background: rgba(102, 126, 234, 0.1);
+    border-left-color: var(--primary);
+    color: var(--primary);
+}
+
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.topbar {
+    background: white;
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.topbar-title {
+    font-size: 1.5em;
+    font-weight: 600;
+    color: #333;
+}
+
+.content-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 30px;
+    background: #f5f6fa;
+}
+
+.card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.card-title {
+    font-size: 1.3em;
+    font-weight: 600;
+    color: #333;
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary {
+    background: var(--light);
+    color: #666;
+    border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+    background: #e9ecef;
+}
+
+.btn-danger {
+    background: var(--danger);
+    color: white;
+}
+
+.btn-small {
+    padding: 8px 12px;
+    font-size: 0.9em;
+}
+
+.upload-area {
+    border: 3px dashed var(--primary);
+    border-radius: 8px;
+    padding: 40px;
+    text-align: center;
+    background: rgba(102, 126, 234, 0.05);
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.upload-area:hover {
+    background: rgba(102, 126, 234, 0.1);
+    border-color: var(--secondary);
+}
+
+.upload-area.dragover {
+    background: rgba(102, 126, 234, 0.2);
+    border-color: var(--secondary);
+}
+
+#fileInput {
+    display: none;
+}
+
+.arquivo-item {
+    background: white;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-left: 4px solid var(--primary);
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.arquivo-info {
+    flex: 1;
+    min-width: 200px;
+}
+
+.arquivo-nome {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.arquivo-tipo {
+    font-size: 0.9em;
+    color: #999;
+}
+
+.arquivo-acoes {
+    display: flex;
+    gap: 10px;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 8px;
+    padding: 30px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border);
+}
+
+.modal-title {
+    font-size: 1.5em;
+    font-weight: 600;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 1.5em;
+    cursor: pointer;
+    color: #999;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    font-size: 1em;
+    font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.alert {
+    padding: 15px 20px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.alert-success {
+    background: #d4edda;
+    color: #155724;
+    border-left: 4px solid #28a745;
+}
+
+.alert-error {
+    background: #f8d7da;
+    color: #721c24;
+    border-left: 4px solid #dc3545;
+}
+
+.alert-info {
+    background: #d1ecf1;
+    color: #0c5460;
+    border-left: 4px solid #17a2b8;
+}
+
+.badge {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 3px;
+    font-size: 0.9em;
+    font-weight: 600;
+}
+
+.badge-success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.badge-warning {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.badge-info {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.badge-danger {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.code-block {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 15px;
+    border-radius: 5px;
+    overflow-x: auto;
+    margin-bottom: 20px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 2.5em;
+    font-weight: bold;
+    color: var(--primary);
+}
+
+.stat-label {
+    color: #999;
+    margin-top: 10px;
+    font-size: 0.95em;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 50px 20px;
+    color: #999;
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        max-width: 250px;
+    }
+
+    .content-area {
+        padding: 15px;
+    }
+
+    .card {
+        padding: 15px;
+    }
+
+    .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .arquivo-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .arquivo-acoes {
+        width: 100%;
+    }
+
+    .modal-content {
+        width: 95%;
+        padding: 20px;
+    }
+}
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>🔍 Analisador</h1>
+                <p>De Projetos</p>
+            </div>
+
+            <nav class="sidebar-menu" id="sidebarMenu">
+                <div class="menu-item active" data-page="upload">
+                    <span>📤</span>
+                    <span>Upload</span>
+                </div>
+                <div class="menu-item" data-page="analise">
+                    <span>📊</span>
+                    <span>Análise</span>
+                </div>
+                <div class="menu-item" data-page="preview">
+                    <span>👁️</span>
+                    <span>Preview</span>
+                </div>
+                <div class="menu-item" data-page="estrutura">
+                    <span>🏗️</span>
+                    <span>Estrutura</span>
+                </div>
+                <div class="menu-item" data-page="exportar">
+                    <span>📥</span>
+                    <span>Exportar</span>
+                </div>
+            </nav>
+        </aside>
+
+        <div class="main-content">
+            <header class="topbar">
+                <h2 class="topbar-title" id="pageTitle">Upload de Projeto</h2>
+                <button class="btn btn-danger btn-small" onclick="limparProjeto()">🗑️ Limpar</button>
+            </header>
+
+            <div class="content-area" id="contentArea"></div>
+        </div>
+    </div>
+
+    <!-- MODAIS -->
+    <div class="modal" id="nomeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">📝 Nomear Projeto</h2>
+                <button class="close-btn" onclick="fecharModal('nomeModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nome do Projeto:</label>
+                    <input type="text" id="nomeProjeto" placeholder="Ex: Meu Sistema">
+                </div>
+                <div class="form-group">
+                    <label>Descrição:</label>
+                    <textarea id="descricaoProjeto" placeholder="Descrição do projeto"></textarea>
+                </div>
+                <button class="btn btn-primary" style="width: 100%;" onclick="confirmarNomeProjeto()">
+                    ✅ Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="codigoModal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="codigoModalTitle">Visualizar Código</h2>
+                <button class="close-btn" onclick="fecharModal('codigoModal')">✕</button>
+            </div>
+            <div class="code-block" id="codigoPreview"></div>
+        </div>
+    </div>
+
+    <script>
+const CONFIG = {
+    currentPage: 'upload',
+    projeto: {
+        nome: '',
+        descricao: '',
+        arquivos: []
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    setupEventListeners();
+    carregarPagina('upload');
+});
+
+function setupEventListeners() {
+    document.querySelectorAll('.menu-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const page = item.dataset.page;
+            mudarPagina(page);
+        });
+    });
+}
+
+function mudarPagina(page) {
+    CONFIG.currentPage = page;
+    
+    document.querySelectorAll('.menu-item').forEach(item => {
+        item.classList.remove('active');
+        if (item.dataset.page === page) {
+            item.classList.add('active');
+        }
+    });
+    
+    carregarPagina(page);
+}
+
+function carregarPagina(page) {
+    const titles = {
+        upload: '📤 Upload de Projeto',
+        analise: '📊 Análise de Arquivos',
+        preview: '👁️ Preview dos Módulos',
+        estrutura: '🏗️ Estrutura do Projeto',
+        exportar: '📥 Exportar Projeto'
+    };
+
+    document.getElementById('pageTitle').textContent = titles[page] || 'Página';
+
+    let conteudo = '';
+    switch(page) {
+        case 'upload':
+            conteudo = renderUpload();
+            break;
+        case 'analise':
+            conteudo = renderAnalise();
+            break;
+        case 'preview':
+            conteudo = renderPreview();
+            break;
+        case 'estrutura':
+            conteudo = renderEstrutura();
+            break;
+        case 'exportar':
+            conteudo = renderExportar();
+            break;
+    }
+    document.getElementById('contentArea').innerHTML = conteudo;
+}
+
+function renderUpload() {
+    return `
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">📤 Importar Projeto</h3>
+            </div>
+            <div class="card-body">
+                <div class="upload-area" id="uploadArea">
+                    <h3>📁 Arraste arquivos aqui ou clique</h3>
+                    <p>Suporta: ZIP, JS, HTML, CSS, JSON, Python, Java, etc</p>
+                </div>
+                <input type="file" id="fileInput" multiple>
+            </div>
+        </div>
+
+        ${CONFIG.projeto.arquivos.length > 0 ? `
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">📋 Arquivos (${CONFIG.projeto.arquivos.length})</h3>
+                    <button class="btn btn-primary btn-small" onclick="abrirModalNomeProjeto()">
+                        ✅ Nomear Projeto
+                    </button>
+                </div>
+                <div class="card-body">
+                    ${CONFIG.projeto.arquivos.map((arquivo, index) => `
+                        <div class="arquivo-item">
+                            <div class="arquivo-info">
+                                <div class="arquivo-nome">📄 ${arquivo.nome}</div>
+                                <div class="arquivo-tipo">
+                                    ${formatarTamanho(arquivo.tamanho)} | ${arquivo.linhas} linhas
+                                </div>
+                            </div>
+                            <div class="arquivo-acoes">
+                                <button class="btn btn-secondary btn-small" onclick="visualizar(${index})">👁️ Ver</button>
+                                <button class="btn btn-danger btn-small" onclick="remover(${index})">🗑️ Remover</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : ''}
+    `;
+}
+
+function renderAnalise() {
+    if (CONFIG.projeto.arquivos.length === 0) {
+        return '<div class="empty-state"><p>📤 Importe arquivos primeiro</p></div>';
+    }
+
+    const analise = analisarProjeto();
+
+    return `
+        <div class="grid">
+            <div class="stat-card">
+                <div class="stat-number">${analise.totalArquivos}</div>
+                <div class="stat-label">Arquivos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">${analise.totalLinhas}</div>
+                <div class="stat-label">Linhas</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">${formatarTamanho(analise.tamanhoTotal)}</div>
+                <div class="stat-label">Tamanho</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">🔍 Detalhes</h3>
+            </div>
+            <div class="card-body">
+                ${analise.tipos.map(tipo => `
+                    <div style="margin-bottom: 10px;">
+                        <strong>${tipo.ext}</strong>: ${tipo.count} arquivo(s)
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
+function renderPreview() {
+    if (CONFIG.projeto.arquivos.length === 0) {
+        return '<div class="empty-state"><p>📤 Importe arquivos primeiro</p></div>';
+    }
+
+    return `
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">👁️ Preview</h3>
+            </div>
+            <div class="card-body">
+                ${CONFIG.projeto.arquivos.map((arquivo, index) => `
+                    <div style="background: #f9f9f9; padding: 15px; margin-bottom: 15px; border-radius: 5px; border-left: 4px solid var(--primary);">
+                        <h4 style="margin-bottom: 10px;">${arquivo.nome}</h4>
+                        <div class="code-block" style="max-height: 150px;">
+${arquivo.conteudo.substring(0, 300)}
+${arquivo.conteudo.length > 300 ? '\n...' : ''}
+                        </div>
+                        <button class="btn btn-secondary btn-small" onclick="visualizar(${index})">Ver Completo</button>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
+function renderEstrutura() {
+    if (CONFIG.projeto.arquivos.length === 0) {
+        return '<div class="empty-state"><p>📤 Importe arquivos primeiro</p></div>';
+    }
+
+    const estrutura = gerarEstrutura();
+
+    return `
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">🏗️ Estrutura</h3>
+                <button class="btn btn-primary btn-small" onclick="copiarEstrutura()">📋 Copiar</button>
+            </div>
+            <div class="card-body">
+                <div class="code-block">${estrutura}</div>
+            </div>
+        </div>
+    `;
+}
+
+function renderExportar() {
+    if (CONFIG.projeto.arquivos.length === 0) {
+        return '<div class="empty-state"><p>📤 Importe arquivos primeiro</p></div>';
+    }
+
+    return `
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">📥 Exportar</h3>
+            </div>
+            <div class="card-body">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                    <button class="btn btn-primary" style="padding: 20px; flex-direction: column; height: auto;" onclick="exportarZip()">
+                        <span style="font-size: 2em;">📦</span>
+                        <span>ZIP</span>
+                    </button>
+                    <button class="btn btn-primary" style="padding: 20px; flex-direction: column; height: auto;" onclick="exportarJSON()">
+                        <span style="font-size: 2em;">⚙️</span>
+                        <span>JSON</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function analisarProjeto() {
+    const tipos = {};
+    let totalLinhas = 0;
+    let tamanhoTotal = 0;
+
+    CONFIG.projeto.arquivos.forEach(arquivo => {
+        const ext = arquivo.nome.split('.').pop();
+        if (!tipos[ext]) tipos[ext] = 0;
+        tipos[ext]++;
+        totalLinhas += arquivo.linhas || 0;
+        tamanhoTotal += arquivo.tamanho || 0;
+    });
+
+    return {
+        totalArquivos: CONFIG.projeto.arquivos.length,
+        totalLinhas,
+        tamanhoTotal,
+        tipos: Object.entries(tipos).map(([ext, count]) => ({ ext, count }))
+    };
+}
+
+function gerarEstrutura() {
+    let estrutura = `${CONFIG.projeto.nome || 'projeto'}/\n`;
+    CONFIG.projeto.arquivos.forEach(arquivo => {
+        estrutura += `├── ${arquivo.nome}\n`;
+    });
+    return estrutura;
+}
+
+function visualizar(index) {
+    const arquivo = CONFIG.projeto.arquivos[index];
+    document.getElementById('codigoModalTitle').textContent = arquivo.nome;
+    document.getElementById('codigoPreview').textContent = arquivo.conteudo;
+    abrirModal('codigoModal');
+}
+
+function remover(index) {
+    if (confirm('Remover arquivo?')) {
+        CONFIG.projeto.arquivos.splice(index, 1);
+        carregarPagina(CONFIG.currentPage);
+        mostrarAlerta('🗑️ Removido!', 'info');
+    }
+}
+
+function copiarEstrutura() {
+    const estrutura = gerarEstrutura();
+    navigator.clipboard.writeText(estrutura);
+    mostrarAlerta('📋 Copiado!', 'success');
+}
+
+async function exportarZip() {
+    const zip = new JSZip();
+    const pasta = zip.folder(CONFIG.projeto.nome || 'projeto');
+
+    CONFIG.projeto.arquivos.forEach(arquivo => {
+        pasta.file(arquivo.nome, arquivo.conteudo);
+    });
+
+    const conteudo = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(conteudo);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${CONFIG.projeto.nome || 'projeto'}.zip`;
+    a.click();
+    URL.revokeObjectURL(url);
+    mostrarAlerta('📦 ZIP baixado!', 'success');
+}
+
+function exportarJSON() {
+    const dados = {
+        nome: CONFIG.projeto.nome,
+        descricao: CONFIG.projeto.descricao,
+        arquivos: CONFIG.projeto.arquivos.map(a => ({
+            nome: a.nome,
+            tamanho: a.tamanho,
+            linhas: a.linhas
+        }))
+    };
+
+    const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${CONFIG.projeto.nome || 'projeto'}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    mostrarAlerta('⚙️ JSON baixado!', 'success');
+}
+
+function abrirModalNomeProjeto() {
+    document.getElementById('nomeProjeto').value = CONFIG.projeto.nome;
+    document.getElementById('descricaoProjeto').value = CONFIG.projeto.descricao;
+    abrirModal('nomeModal');
+}
+
+function confirmarNomeProjeto() {
+    CONFIG.projeto.nome = document.getElementById('nomeProjeto').value;
+    CONFIG.projeto.descricao = document.getElementById('descricaoProjeto').value;
+    fecharModal('nomeModal');
+    mostrarAlerta('✅ Projeto nomeado!', 'success');
+    carregarPagina('upload');
+}
+
+function abrirModal(id) {
+    document.getElementById(id).classList.add('active');
+}
+
+function fecharModal(id) {
+    document.getElementById(id).classList.remove('active');
+}
+
+function formatarTamanho(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const tamanhos = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + tamanhos[i];
+}
+
+function mostrarAlerta(mensagem, tipo = 'info') {
+    const container = document.getElementById('contentArea');
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${tipo}`;
+    alert.innerHTML = `<span>${mensagem}</span>`;
+    container.insertBefore(alert, container.firstChild);
+    setTimeout(() => alert.remove(), 4000);
+}
+
+function limparProjeto() {
+    if (confirm('Limpar tudo?')) {
+        CONFIG.projeto = { nome: '', descricao: '', arquivos: [] };
+        carregarPagina('upload');
+        mostrarAlerta('🗑️ Tudo limpo!', 'info');
+    }
+}
+
+function processarArquivos(files) {
+    Array.from(files).forEach(file => {
+        if (file.name.endsWith('.zip')) {
+            processarZip(file);
+        } else {
+            processarArquivoSimples(file);
+        }
+    });
+}
+
+function processarArquivoSimples(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const conteudo = e.target.result;
+        const linhas = conteudo.split('\n').length;
+
+        CONFIG.projeto.arquivos.push({
+            nome: file.name,
+            conteudo: conteudo,
+            tamanho: file.size,
+            linhas: linhas
+        });
+
+        mostrarAlerta('✅ ' + file.name, 'success');
+        carregarPagina('upload');
+    };
+    reader.readAsText(file);
+}
+
+function processarZip(file) {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const zip = new JSZip();
+            const conteudo = await zip.loadAsync(e.target.result);
+
+            for (const [path, file] of Object.entries(conteudo.files)) {
+                if (!file.dir && !path.includes('node_modules')) {
+                    const dados = await file.async('string');
+                    const nome = path.split('/').pop();
+                    const linhas = dados.split('\n').length;
+
+                    CONFIG.projeto.arquivos.push({
+                        nome: nome,
+                        conteudo: dados,
+                        tamanho: dados.length,
+                        linhas: linhas
+                    });
+                }
+            }
+
+            mostrarAlerta('✅ ZIP extraído!', 'success');
+            carregarPagina('upload');
+        } catch (erro) {
+            mostrarAlerta('❌ Erro: ' + erro.message, 'error');
+        }
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+// Setup upload
+document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('click', (e) => {
+        if (e.target.id === 'uploadArea' || e.target.closest('#uploadArea')) {
+            document.getElementById('fileInput').click();
+        }
+    });
+
+    document.addEventListener('change', (e) => {
+        if (e.target.id === 'fileInput') {
+            processarArquivos(e.target.files);
+        }
+    });
+
+    document.addEventListener('dragover', (e) => {
+        const uploadArea = document.getElementById('uploadArea');
+        if (uploadArea) {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        }
+    });
+
+    document.addEventListener('dragleave', (e) => {
+        const uploadArea = document.getElementById('uploadArea');
+        if (uploadArea) {
+            uploadArea.classList.remove('dragover');
+        }
+    });
+
+    document.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const uploadArea = document.getElementById('uploadArea');
+        if (uploadArea) {
+            uploadArea.classList.remove('dragover');
+            processarArquivos(e.dataTransfer.files);
+        }
+    });
+});
+    </script>
+<script>// JavaScript extra
+console.log("Playground pronto!");</script></body>
+</html>

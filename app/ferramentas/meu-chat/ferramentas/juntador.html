@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Juntador de Projetos HTML</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: Arial, sans-serif;
+  background: #1a1a2e;
+  color: #eee;
+  min-height: 100vh;
+  padding: 20px;
+}
+h1 { text-align: center; color: #00d4ff; margin-bottom: 6px; font-size: 1.4em; }
+.sub { text-align: center; color: #aaa; font-size: 0.85em; margin-bottom: 20px; }
+.card {
+  background: #16213e;
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 16px;
+  border: 1px solid #0f3460;
+}
+.card h2 { color: #00d4ff; font-size: 1em; margin-bottom: 12px; }
+
+#dropZone {
+  border: 2px dashed #00d4ff;
+  border-radius: 10px;
+  padding: 30px;
+  text-align: center;
+  cursor: pointer;
+  background: #0d1b2a;
+  transition: background 0.3s;
+}
+#dropZone:hover, #dropZone.dragover { background: #1a3a5c; }
+#dropZone .icon { font-size: 2.5em; }
+#dropZone p { color: #aaa; font-size: 0.9em; margin-top: 8px; }
+#fileInput { display: none; }
+
+.lista-arquivos { margin-top: 14px; }
+.arquivo-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #0d1b2a;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  border: 1px solid #0f3460;
+  font-size: 0.85em;
+}
+.arquivo-nome { color: #00d4ff; }
+.arquivo-tipo {
+  background: #0f3460;
+  border-radius: 10px;
+  padding: 2px 8px;
+  font-size: 0.75em;
+  color: #aaa;
+}
+.arquivo-remover {
+  background: #f44336;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 3px 8px;
+  cursor: pointer;
+  font-size: 0.75em;
+}
+
+button {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9em;
+  font-weight: bold;
+  transition: opacity 0.2s;
+}
+button:hover { opacity: 0.85; }
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-blue  { background: #00d4ff; color: #000; }
+.btn-green { background: #00c853; color: #000; }
+.btn-red   { background: #f44336; color: #fff; }
+.btns { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+
+.opcoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 10px;
+}
+.opcao {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85em;
+  color: #aaa;
+  cursor: pointer;
+}
+.opcao input { accent-color: #00d4ff; width: 16px; height: 16px; cursor: pointer; }
+
+#resultBox { display: none; }
+#resultCode {
+  width: 100%;
+  min-height: 200px;
+  background: #0d1b2a;
+  color: #eee;
+  border: 1px solid #0f3460;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 0.8em;
+  font-family: monospace;
+  resize: vertical;
+}
+.stats {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.badge {
+  background: #0f3460;
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 0.8em;
+  color: #00d4ff;
+}
+
+.dica {
+  background: #0f3460;
+  border-left: 3px solid #ff9800;
+  padding: 10px 14px;
+  border-radius: 0 8px 8px 0;
+  font-size: 0.82em;
+  color: #aaa;
+  margin-top: 10px;
+}
+.dica strong { color: #ff9800; }
+
+#log {
+  background: #0d1b2a;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 0.78em;
+  font-family: monospace;
+  color: #69f0ae;
+  min-height: 60px;
+  max-height: 150px;
+  overflow-y: auto;
+  margin-top: 10px;
+  display: none;
+}
+</style>
+</head>
+<body>
+
+<h1>🔧 Juntador de Projetos HTML</h1>
+<p class="sub">Junta vários arquivos HTML, CSS e JS num único arquivo — sem Python, sem terminal</p>
+
+<!-- UPLOAD -->
+<div class="card">
+  <h2>📁 1. Adicione os arquivos do projeto</h2>
+  <div id="dropZone" onclick="document.getElementById('fileInput').click()">
+    <div class="icon">📂</div>
+    <p>Clique aqui ou arraste os arquivos</p>
+    <p style="font-size:0.75em; margin-top:4px;">HTML, CSS, JS — pode selecionar vários de uma vez</p>
+  </div>
+  <input type="file" id="fileInput" multiple accept=".html,.htm,.css,.js,.json,.txt">
+  <div class="lista-arquivos" id="listaArquivos"></div>
+</div>
+
+<!-- OPÇÕES -->
+<div class="card">
+  <h2>⚙️ 2. Opções de junção</h2>
+  <div class="opcoes">
+    <label class="opcao">
+      <input type="checkbox" id="optCSS" checked>
+      Embutir CSS nos &lt;style&gt;
+    </label>
+    <label class="opcao">
+      <input type="checkbox" id="optJS" checked>
+      Embutir JS nos &lt;script&gt;
+    </label>
+    <label class="opcao">
+      <input type="checkbox" id="optComentarios" checked>
+      Adicionar comentários de separação
+    </label>
+    <label class="opcao">
+      <input type="checkbox" id="optLog">
+      Mostrar log detalhado
+    </label>
+  </div>
+  <div class="dica">
+    <strong>⚠️ Como funciona:</strong> Selecione o arquivo HTML principal primeiro (ou ele detecta automaticamente). Os CSS e JS são embutidos dentro do HTML. Outros HTMLs viram abas ou seções internas.
+  </div>
+</div>
+
+<!-- PROCESSAR -->
+<div class="card">
+  <h2>🚀 3. Juntar tudo</h2>
+  <div class="btns">
+    <button class="btn-blue" id="btnJuntar" onclick="juntar()" disabled>
+      ⚡ Juntar Arquivos
+    </button>
+    <button class="btn-red" onclick="limparTudo()">🗑️ Limpar</button>
+  </div>
+  <div id="log"></div>
+</div>
+
+<!-- RESULTADO -->
+<div class="card" id="resultBox">
+  <h2>✅ 4. Resultado</h2>
+  <div class="stats">
+    <span class="badge" id="statArquivos">Arquivos: --</span>
+    <span class="badge" id="statLinhas">Linhas: --</span>
+    <span class="badge" id="statTamanho">Tamanho: --</span>
+  </div>
+  <textarea id="resultCode" readonly></textarea>
+  <div class="btns" style="margin-top:10px;">
+    <button class="btn-green" onclick="baixar()">⬇️ Baixar HTML Unificado</button>
+    <button class="btn-blue" onclick="copiarCodigo()">📋 Copiar Código</button>
+  </div>
+</div>
+
+<script>
+let arquivos = [];
+
+// DRAG AND DROP
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  adicionarArquivos(Array.from(e.dataTransfer.files));
+});
+
+document.getElementById('fileInput').addEventListener('change', e => {
+  adicionarArquivos(Array.from(e.target.files));
+  e.target.value = '';
+});
+
+function adicionarArquivos(novos) {
+  novos.forEach(f => {
+    if (!arquivos.find(a => a.name === f.name)) {
+      arquivos.push(f);
+    }
+  });
+  renderLista();
+  document.getElementById('btnJuntar').disabled = arquivos.length === 0;
+}
+
+function renderLista() {
+  const lista = document.getElementById('listaArquivos');
+  if (arquivos.length === 0) { lista.innerHTML = ''; return; }
+  lista.innerHTML = arquivos.map((f, i) => `
+    <div class="arquivo-item">
+      <span class="arquivo-nome">${getIcone(f.name)} ${f.name}</span>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span class="arquivo-tipo">${getTipo(f.name)} • ${formatBytes(f.size)}</span>
+        <button class="arquivo-remover" onclick="remover(${i})">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function remover(i) {
+  arquivos.splice(i, 1);
+  renderLista();
+  document.getElementById('btnJuntar').disabled = arquivos.length === 0;
+}
+
+function getIcone(nome) {
+  if (nome.endsWith('.html') || nome.endsWith('.htm')) return '🌐';
+  if (nome.endsWith('.css')) return '🎨';
+  if (nome.endsWith('.js')) return '⚡';
+  if (nome.endsWith('.json')) return '📋';
+  return '📄';
+}
+
+function getTipo(nome) {
+  const ext = nome.split('.').pop().toUpperCase();
+  return ext;
+}
+
+async function lerArquivo(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => resolve(e.target.result);
+    reader.onerror = reject;
+    reader.readAsText(file, 'UTF-8');
+  });
+}
+
+function addLog(msg) {
+  const log = document.getElementById('log');
+  if (document.getElementById('optLog').checked) {
+    log.style.display = 'block';
+    log.innerHTML += msg + '\n';
+    log.scrollTop = log.scrollHeight;
+  }
+}
+
+async function juntar() {
+  document.getElementById('log').innerHTML = '';
+  document.getElementById('resultBox').style.display = 'none';
+  document.getElementById('btnJuntar').disabled = true;
+
+  addLog('🚀 Iniciando junção...');
+
+  // Ler todos os arquivos
+  const conteudos = {};
+  for (const f of arquivos) {
+    conteudos[f.name] = await lerArquivo(f);
+    addLog(`✅ Lido: ${f.name} (${formatBytes(f.size)})`);
+  }
+
+  // Encontrar HTML principal
+  const htmlArquivos = arquivos.filter(f => f.name.endsWith('.html') || f.name.endsWith('.htm'));
+  const cssArquivos  = arquivos.filter(f => f.name.endsWith('.css'));
+  const jsArquivos   = arquivos.filter(f => f.name.endsWith('.js'));
+  const outrosHTML   = [];
+
+  let htmlPrincipal = null;
+  let htmlPrincipalNome = '';
+
+  // Detectar principal: index.html ou o primeiro
+  const candidatos = ['index.html', 'main.html', 'app.html'];
+  for (const c of candidatos) {
+    if (conteudos[c]) { htmlPrincipal = conteudos[c]; htmlPrincipalNome = c; break; }
+  }
+  if (!htmlPrincipal && htmlArquivos.length > 0) {
+    htmlPrincipalNome = htmlArquivos[0].name;
+    htmlPrincipal = conteudos[htmlPrincipalNome];
+  }
+
+  if (!htmlPrincipal) {
+    alert('Nenhum arquivo HTML encontrado!');
+    document.getElementById('btnJuntar').disabled = false;
+    return;
+  }
+
+  addLog(`📌 HTML principal: ${htmlPrincipalNome}`);
+
+  // HTMLs secundários
+  htmlArquivos.forEach(f => {
+    if (f.name !== htmlPrincipalNome) outrosHTML.push(f.name);
+  });
+
+  let resultado = htmlPrincipal;
+  const optCSS = document.getElementById('optCSS').checked;
+  const optJS  = document.getElementById('optJS').checked;
+  const optCom = document.getElementById('optComentarios').checked;
+
+  // EMBUTIR CSS externos
+  if (optCSS) {
+    cssArquivos.forEach(f => {
+      const nome = f.name;
+      const conteudo = conteudos[nome];
+      const regex = new RegExp(`<link[^>]*href=["']${nome}["'][^>]*>`, 'gi');
+      if (regex.test(resultado)) {
+        resultado = resultado.replace(regex,
+          (optCom ? `\n<!-- ===== CSS: ${nome} ===== -->\n` : '') +
+          `<style>\n${conteudo}\n</style>`
+        );
+        addLog(`🎨 CSS embutido: ${nome}`);
+      } else {
+        // Inserir antes do </head>
+        const bloco = (optCom ? `\n<!-- ===== CSS: ${nome} ===== -->\n` : '') +
+                      `<style>\n${conteudo}\n</style>\n`;
+        resultado = resultado.replace('</head>', bloco + '</head>');
+        addLog(`🎨 CSS adicionado ao head: ${nome}`);
+      }
+    });
+  }
+
+  // EMBUTIR JS externos
+  if (optJS) {
+    jsArquivos.forEach(f => {
+      const nome = f.name;
+      const conteudo = conteudos[nome];
+      const regex = new RegExp(`<script[^>]*src=["']${nome}["'][^>]*><\\/script>`, 'gi');
+      if (regex.test(resultado)) {
+        resultado = resultado.replace(regex,
+          (optCom ? `\n<!-- ===== JS: ${nome} ===== -->\n` : '') +
+          `<script>\n${conteudo}\n<\/script>`
+        );
+        addLog(`⚡ JS embutido: ${nome}`);
+      } else {
+        const bloco = (optCom ? `\n<!-- ===== JS: ${nome} ===== -->\n` : '') +
+                      `<script>\n${conteudo}\n<\/script>\n`;
+        resultado = resultado.replace('</body>', bloco + '</body>');
+        addLog(`⚡ JS adicionado ao body: ${nome}`);
+      }
+    });
+  }
+
+  // HTMLs secundários — embutir como seções ocultas com iframe inline
+  if (outrosHTML.length > 0) {
+    let secoes = '';
+    outrosHTML.forEach(nome => {
+      const conteudo = conteudos[nome];
+      const encoded = btoa(unescape(encodeURIComponent(conteudo)));
+      secoes += (optCom ? `\n<!-- ===== HTML EMBUTIDO: ${nome} ===== -->\n` : '') +
+        `<div id="pagina-${nome.replace(/[^a-z0-9]/gi,'_')}" class="pagina-embutida" style="display:none;" data-src="${encoded}"></div>\n`;
+      addLog(`🌐 HTML embutido: ${nome}`);
+    });
+    resultado = resultado.replace('</body>', secoes + '</body>');
+  }
+
+  // Mostrar resultado
+  const linhas = resultado.split('\n').length;
+  document.getElementById('resultCode').value = resultado;
+  document.getElementById('statArquivos').textContent = `Arquivos: ${arquivos.length}`;
+  document.getElementById('statLinhas').textContent = `Linhas: ${linhas.toLocaleString()}`;
+  document.getElementById('statTamanho').textContent = `Tamanho: ${formatBytes(new Blob([resultado]).size)}`;
+  document.getElementById('resultBox').style.display = 'block';
+  document.getElementById('btnJuntar').disabled = false;
+
+  addLog(`✅ Concluído! ${linhas} linhas geradas.`);
+}
+
+function baixar() {
+  const codigo = document.getElementById('resultCode').value;
+  const blob = new Blob([codigo], { type: 'text/html' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'projeto_unificado.html';
+  a.click();
+}
+
+function copiarCodigo() {
+  navigator.clipboard.writeText(document.getElementById('resultCode').value)
+    .then(() => alert('✅ Código copiado!'));
+}
+
+function limparTudo() {
+  arquivos = [];
+  renderLista();
+  document.getElementById('resultBox').style.display = 'none';
+  document.getElementById('log').innerHTML = '';
+  document.getElementById('log').style.display = 'none';
+  document.getElementById('btnJuntar').disabled = true;
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/1048576).toFixed(1) + ' MB';
+}
+</script>
+</body>
+</html>

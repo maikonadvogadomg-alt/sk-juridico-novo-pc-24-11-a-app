@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Detector e Corretor de API</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 16px;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  h1 { text-align: center; color: #7c3aed; font-size: 1.4rem; margin-bottom: 4px; }
+  .subtitulo { text-align: center; color: #94a3b8; font-size: 0.85rem; margin-bottom: 20px; }
+
+  .card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .card-titulo {
+    font-weight: bold;
+    color: #c4b5fd;
+    margin-bottom: 12px;
+    font-size: 1rem;
+  }
+
+  label { display: block; font-size: 0.82rem; color: #94a3b8; margin-bottom: 4px; margin-top: 10px; }
+
+  textarea {
+    width: 100%;
+    background: #0f172a;
+    border: 2px solid #334155;
+    border-radius: 8px;
+    color: #e2e8f0;
+    padding: 10px 12px;
+    font-size: 0.82rem;
+    font-family: monospace;
+    outline: none;
+    resize: vertical;
+    min-height: 160px;
+    transition: border 0.2s;
+  }
+  textarea:focus { border-color: #7c3aed; }
+
+  input[type="text"] {
+    width: 100%;
+    background: #0f172a;
+    border: 2px solid #334155;
+    border-radius: 8px;
+    color: #e2e8f0;
+    padding: 10px 12px;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border 0.2s;
+  }
+  input[type="text"]:focus { border-color: #7c3aed; }
+
+  .btn {
+    display: inline-block;
+    padding: 12px 20px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: bold;
+    transition: all 0.2s;
+    margin: 4px 4px 4px 0;
+  }
+  .btn-roxo { background: #7c3aed; color: white; }
+  .btn-roxo:hover { background: #6d28d9; }
+  .btn-verde { background: #16a34a; color: white; }
+  .btn-verde:hover { background: #15803d; }
+  .btn-cinza { background: #334155; color: #94a3b8; }
+  .btn-cinza:hover { background: #475569; }
+  .btn-amarelo { background: #d97706; color: white; }
+  .btn-amarelo:hover { background: #b45309; }
+
+  /* PROBLEMAS DETECTADOS */
+  .problema {
+    background: #0f172a;
+    border: 2px solid #ef4444;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+  .problema.resolvido { border-color: #22c55e; }
+  .problema.aviso { border-color: #f59e0b; }
+
+  .problema-titulo {
+    font-weight: bold;
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .problema-desc { font-size: 0.82rem; color: #94a3b8; margin-bottom: 8px; }
+  .problema-encontrado {
+    background: #1e293b;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-family: monospace;
+    font-size: 0.8rem;
+    color: #f87171;
+    margin-bottom: 8px;
+    word-break: break-all;
+  }
+  .problema-solucao {
+    font-size: 0.82rem;
+    color: #86efac;
+    margin-bottom: 8px;
+  }
+
+  /* INPUT NOVA CHAVE */
+  .input-chave {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .input-chave input { flex: 1; min-width: 200px; }
+
+  /* RESULTADO */
+  .resultado-box {
+    background: #0f172a;
+    border: 2px solid #22c55e;
+    border-radius: 10px;
+    padding: 12px;
+    margin-top: 12px;
+    display: none;
+  }
+  .resultado-box.visivel { display: block; }
+  .resultado-info { font-size: 0.85rem; color: #86efac; margin-bottom: 8px; font-weight: bold; }
+
+  /* BADGE */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: bold;
+  }
+  .badge-vermelho { background: #7f1d1d; color: #fca5a5; }
+  .badge-verde { background: #14532d; color: #86efac; }
+  .badge-amarelo { background: #713f12; color: #fde68a; }
+
+  /* NENHUM PROBLEMA */
+  .ok-box {
+    background: #0f172a;
+    border: 2px solid #22c55e;
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+    display: none;
+  }
+  .ok-box.visivel { display: block; }
+
+  /* SEPARADOR */
+  .separador {
+    border: none;
+    border-top: 1px solid #334155;
+    margin: 14px 0;
+  }
+
+  .rodape {
+    text-align: center;
+    font-size: 0.75rem;
+    color: #475569;
+    margin-top: 20px;
+    padding-top: 12px;
+    border-top: 1px solid #1e293b;
+  }
+  .fonte-link { color: #7c3aed; text-decoration: none; }
+
+  /* RESUMO */
+  .resumo-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .resumo-item {
+    background: #0f172a;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    border: 1px solid #334155;
+  }
+  .resumo-num { font-size: 1.6rem; font-weight: bold; }
+  .resumo-label { font-size: 0.75rem; color: #94a3b8; margin-top: 2px; }
+  .vermelho { color: #f87171; }
+  .amarelo { color: #fbbf24; }
+  .verde { color: #86efac; }
+  .roxo { color: #c4b5fd; }
+</style>
+</head>
+<body>
+
+<h1>🔍 Detector de Problemas de API</h1>
+<p class="subtitulo">Cole o código — ele detecta os problemas e já oferece o botão de corrigir</p>
+
+<!-- PASSO 1: COLAR CÓDIGO -->
+<div class="card">
+  <div class="card-titulo">📥 Passo 1 — Cole o código aqui</div>
+  <textarea id="codigo-entrada" placeholder="Cole aqui o código HTML, JavaScript, JSON ou qualquer arquivo de texto do seu projeto..."></textarea>
+  <div style="margin-top:10px;">
+    <button class="btn btn-roxo" onclick="analisarCodigo()">🔍 Analisar e detectar problemas</button>
+    <button class="btn btn-cinza" onclick="limparTudo()">🗑️ Limpar</button>
+  </div>
+</div>
+
+<!-- RESULTADO DA ANÁLISE -->
+<div id="area-analise" style="display:none;">
+
+  <!-- RESUMO -->
+  <div class="card" id="card-resumo">
+    <div class="card-titulo">📊 Resumo da análise</div>
+    <div class="resumo-grid">
+      <div class="resumo-item">
+        <div class="resumo-num vermelho" id="num-criticos">0</div>
+        <div class="resumo-label">🔴 Problemas críticos</div>
+      </div>
+      <div class="resumo-item">
+        <div class="resumo-num amarelo" id="num-avisos">0</div>
+        <div class="resumo-label">🟡 Avisos</div>
+      </div>
+    </div>
+    <div id="resumo-texto" style="font-size:0.85rem; color:#94a3b8;"></div>
+  </div>
+
+  <!-- OK -->
+  <div id="ok-box" class="ok-box">
+    <div style="font-size:2rem;">✅</div>
+    <div style="font-weight:bold; color:#86efac; margin-top:6px;">Nenhum problema detectado!</div>
+    <div style="font-size:0.85rem; color:#94a3b8; margin-top:4px;">O código não tem chaves antigas, modelos desatualizados ou URLs problemáticas conhecidas.</div>
+  </div>
+
+  <!-- LISTA DE PROBLEMAS -->
+  <div id="lista-problemas"></div>
+
+  <!-- PASSO 2: CORRIGIR TUDO -->
+  <div class="card" id="card-corrigir" style="display:none;">
+    <div class="card-titulo">⚡ Passo 2 — Corrigir tudo de uma vez</div>
+    <p style="font-size:0.85rem; color:#94a3b8; margin-bottom:12px;">
+      Antes de corrigir, informe sua nova chave (se tiver). Se não tiver ainda, deixe em branco e corrija só os modelos/URLs.
+    </p>
+    <label>🔑 Sua nova chave (começa com AQ.Ab... ou sk-monica-...):</label>
+    <div class="input-chave">
+      <input type="text" id="nova-chave-global" placeholder="Cole sua nova chave aqui (opcional)">
+    </div>
+    <button class="btn btn-verde" onclick="corrigirTudo()">✅ Corrigir todos os problemas</button>
+  </div>
+
+  <!-- RESULTADO FINAL -->
+  <div id="resultado-final" class="resultado-box">
+    <div class="resultado-info" id="resultado-final-info"></div>
+    <label>📤 Código corrigido:</label>
+    <textarea id="codigo-saida" readonly style="min-height:180px; border-color:#22c55e;"></textarea>
+    <div style="margin-top:8px;">
+      <button class="btn btn-verde" onclick="copiarResultado()">📋 Copiar código corrigido</button>
+      <button class="btn btn-roxo" onclick="analisarNovamente()">🔍 Analisar novamente</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- RODAPÉ -->
+<div class="rodape">
+  <p>📚 Fontes:</p>
+  <p>
+    <a href="https://aistudio.google.com/docs/api-key" target="_blank" class="fonte-link">Google AI Studio Docs</a> ·
+    <a href="https://dev.to/rapls/i-created-a-gemini-api-key-and-got-aq-instead-of-aiza-3dp3" target="_blank" class="fonte-link">Dev.to — Mudança AIza→AQ</a> ·
+    <a href="https://discuss.ai.google.dev/t/account-only-generates-aq-prefix-api-keys-aiza-keys-no-longer-available-in-any-project/169242" target="_blank" class="fonte-link">Google Dev Forum</a>
+  </p>
+  <p style="margin-top:6px;">Detector de API · Monica AI · Novembro 2026</p>
+</div>
+
+<script>
+// =============================================
+// BANCO DE PROBLEMAS CONHECIDOS
+// Fácil de expandir no futuro!
+// =============================================
+const PROBLEMAS_CONHECIDOS = [
+  // ---- GEMINI: CHAVES ANTIGAS ----
+  {
+    id: 'gemini-chave-antiga',
+    nivel: 'critico',
+    titulo: '🔴 Chave Gemini antiga detectada (AIzaSy)',
+    descricao: 'O Google migrou para novo formato de chave. Chaves AIzaSy estão sendo bloqueadas desde maio de 2026.',
+    regex: /AIzaSy[A-Za-z0-9_-]{33,}/g,
+    tipo: 'chave',
+    solucao: 'Substitua pela sua nova chave (começa com AQ.Ab...)',
+    precisaNovaChave: true,
+    substituirPor: null // preenchido pelo usuário
+  },
+
+  // ---- GEMINI: MODELOS ANTIGOS ----
+  {
+    id: 'gemini-modelo-pro-antigo',
+    nivel: 'critico',
+    titulo: '🔴 Modelo Gemini desatualizado (gemini-pro)',
+    descricao: 'O modelo "gemini-pro" foi descontinuado. Use gemini-2.5-flash para uso geral.',
+    regex: /["'`]gemini-pro["'`]/g,
+    tipo: 'modelo',
+    solucao: 'Substituir por: gemini-2.5-flash',
+    precisaNovaChave: false,
+    de: '"gemini-pro"',
+    para: '"gemini-2.5-flash"',
+    deSimples: 'gemini-pro',
+    paraSimples: 'gemini-2.5-flash'
+  },
+  {
+    id: 'gemini-modelo-15-pro',
+    nivel: 'critico',
+    titulo: '🔴 Modelo Gemini desatualizado (gemini-1.5-pro)',
+    descricao: 'O modelo "gemini-1.5-pro" foi descontinuado. Use gemini-2.5-pro.',
+    regex: /gemini-1\.5-pro/g,
+    tipo: 'modelo',
+    solucao: 'Substituir por: gemini-2.5-pro',
+    precisaNovaChave: false,
+    deSimples: 'gemini-1.5-pro',
+    paraSimples: 'gemini-2.5-pro'
+  },
+  {
+    id: 'gemini-modelo-15-flash',
+    nivel: 'critico',
+    titulo: '🔴 Modelo Gemini desatualizado (gemini-1.5-flash)',
+    descricao: 'O modelo "gemini-1.5-flash" foi descontinuado. Use gemini-2.5-flash.',
+    regex: /gemini-1\.5-flash/g,
+    tipo: 'modelo',
+    solucao: 'Substituir por: gemini-2.5-flash',
+    precisaNovaChave: false,
+    deSimples: 'gemini-1.5-flash',
+    paraSimples: 'gemini-2.5-flash'
+  },
+  {
+    id: 'gemini-modelo-10-pro',
+    nivel: 'critico',
+    titulo: '🔴 Modelo Gemini muito antigo (gemini-1.0-pro)',
+    descricao: 'Modelo muito antigo. Use gemini-2.5-flash.',
+    regex: /gemini-1\.0-pro/g,
+    tipo: 'modelo',
+    solucao: 'Substituir por: gemini-2.5-flash',
+    precisaNovaChave: false,
+    deSimples: 'gemini-1.0-pro',
+    paraSimples: 'gemini-2.5-flash'
+  },
+
+  // ---- GEMINI: URL ANTIGA ----
+  {
+    id: 'gemini-url-antiga',
+    nivel: 'aviso',
+    titulo: '🟡 URL direta do Google Gemini detectada',
+    descricao: 'O código usa a URL direta do Google. Se quiser usar pela Monica API, precisa trocar a URL.',
+    regex: /https:\/\/generativelanguage\.googleapis\.com[^\s"'`]*/g,
+    tipo: 'url',
+    solucao: 'Se usar Monica API: trocar por https://openapi.monica.im/v1',
+    precisaNovaChave: false,
+    deSimples: 'https://generativelanguage.googleapis.com/v1beta',
+    paraSimples: 'https://openapi.monica.im/v1'
+  },
+
+  // ---- CLAUDE: MODELOS ANTIGOS ----
+  {
+    id: 'claude-haiku-antigo',
+    nivel: 'aviso',
+    titulo: '🟡 Modelo Claude antigo (claude-3-haiku)',
+    descricao: 'Versão antiga do Claude Haiku. Pode não estar mais disponível.',
+    regex: /claude-3-haiku[^\s"'`]*/g,
+    tipo: 'modelo',
+    solucao: 'Substituir por: claude-haiku-4-5',
+    precisaNovaChave: false,
+    deSimples: 'claude-3-haiku-20240307',
+    paraSimples: 'claude-haiku-4-5'
+  },
+  {
+    id: 'claude-sonnet-antigo',
+    nivel: 'aviso',
+    titulo: '🟡 Modelo Claude antigo (claude-3-sonnet)',
+    descricao: 'Versão antiga do Claude Sonnet.',
+    regex: /claude-3-sonnet[^\s"'`]*/g,
+    tipo: 'modelo',
+    solucao: 'Substituir por: claude-sonnet-4-5',
+    precisaNovaChave: false,
+    deSimples: 'claude-3-sonnet-20240229',
+    paraSimples: 'claude-sonnet-4-5'
+  },
+  {
+    id: 'claude-35-sonnet',
+    nivel: 'aviso',
+    titulo: '🟡 Modelo Claude 3.5 Sonnet (versão antiga)',
+    descricao: 'Claude 3.5 Sonnet ainda funciona mas há versão mais nova.',
+    regex: /claude-3-5-sonnet[^\s"'`]*/g,
+    tipo: 'modelo',
+    solucao: 'Substituir por: claude-sonnet-4-5',
+    precisaNovaChave: false,
+    deSimples: 'claude-3-5-sonnet-20241022',
+    paraSimples: 'claude-sonnet-4-5'
+  }
+];
+
+// =============================================
+// ANÁLISE PRINCIPAL
+// =============================================
+let problemasEncontrados = [];
+
+function analisarCodigo() {
+  const codigo = document.getElementById('codigo-entrada').value;
+  if (!codigo.trim()) {
+    alert('Cole o código primeiro!');
+    return;
+  }
+
+  problemasEncontrados = [];
+
+  PROBLEMAS_CONHECIDOS.forEach(problema => {
+    const regex = new RegExp(problema.regex.source, problema.regex.flags);
+    const matches = [...codigo.matchAll(regex)];
+    if (matches.length > 0) {
+      problemasEncontrados.push({
+        ...problema,
+        ocorrencias: matches.length,
+        exemplos: matches.slice(0, 3).map(m => m[0])
+      });
+    }
+  });
+
+  mostrarResultados(codigo);
+}
+
+function mostrarResultados(codigo) {
+  const area = document.getElementById('area-analise');
+  const lista = document.getElementById('lista-problemas');
+  const okBox = document.getElementById('ok-box');
+  const cardCorrigir = document.getElementById('card-corrigir');
+
+  area.style.display = 'block';
+  lista.innerHTML = '';
+  document.getElementById('resultado-final').classList.remove('visivel');
+
+  const criticos = problemasEncontrados.filter(p => p.nivel === 'critico');
+  const avisos = problemasEncontrados.filter(p => p.nivel === 'aviso');
+
+  document.getElementById('num-criticos').textContent = criticos.length;
+  document.getElementById('num-avisos').textContent = avisos.length;
+
+  if (problemasEncontrados.length === 0) {
+    okBox.classList.add('visivel');
+    cardCorrigir.style.display = 'none';
+    document.getElementById('resumo-texto').textContent = 'Nenhum problema conhecido foi encontrado.';
+    return;
+  }
+
+  okBox.classList.remove('visivel');
+  cardCorrigir.style.display = 'block';
+
+  document.getElementById('resumo-texto').innerHTML =
+    `Encontrei <strong style="color:#f87171">${criticos.length} problema(s) crítico(s)</strong> e <strong style="color:#fbbf24">${avisos.length} aviso(s)</strong>. Veja abaixo e corrija com um clique.`;
+
+  problemasEncontrados.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'problema' + (p.nivel === 'aviso' ? ' aviso' : '');
+    div.id = 'prob-' + p.id;
+
+    const badge = p.nivel === 'critico'
+      ? '<span class="badge badge-vermelho">CRÍTICO</span>'
+      : '<span class="badge badge-amarelo">AVISO</span>';
+
+    const exemplosHtml = p.exemplos.map(e =>
+      `<div class="problema-encontrado">${escapeHtml(e)}</div>`
+    ).join('');
+
+    const inputChave = p.precisaNovaChave ? `
+      <div style="margin:8px 0;">
+        <label style="margin-top:0;">🔑 Cole sua nova chave aqui:</label>
+        <div class="input-chave">
+          <input type="text" id="chave-${p.id}" placeholder="AQ.Ab... ou sk-monica-...">
+          <button class="btn btn-verde" onclick="corrigirUm('${p.id}')">✅ Corrigir este</button>
+        </div>
+      </div>
+    ` : `
+      <button class="btn btn-verde" onclick="corrigirUm('${p.id}')">✅ Corrigir este</button>
+    `;
+
+    div.innerHTML = `
+      <div class="problema-titulo">${badge} ${p.titulo}</div>
+      <div class="problema-desc">${p.descricao}</div>
+      <div style="font-size:0.8rem; color:#94a3b8; margin-bottom:4px;">Encontrado ${p.ocorrencias} vez(es). Exemplos:</div>
+      ${exemplosHtml}
+      <div class="problema-solucao">💡 ${p.solucao}</div>
+      ${inputChave}
+    `;
+
+    lista.appendChild(div);
+  });
+
+  area.scrollIntoView({ behavior: 'smooth' });
+}
+
+// =============================================
+// CORRIGIR UM PROBLEMA
+// =============================================
+function corrigirUm(id) {
+  const problema = problemasEncontrados.find(p => p.id === id);
+  if (!problema) return;
+
+  let codigo = document.getElementById('codigo-saida').value ||
+               document.getElementById('codigo-entrada').value;
+
+  if (problema.precisaNovaChave) {
+    const novaChave = document.getElementById('chave-' + id)?.value?.trim() ||
+                      document.getElementById('nova-chave-global').value?.trim();
+    if (!novaChave) {
+      alert('Cole sua nova chave no campo acima!');
+      return;
+    }
+    const regex = new RegExp(problema.regex.source, 'g');
+    codigo = codigo.replace(regex, novaChave);
+  } else {
+    const de = problema.deSimples || problema.de;
+    const para = problema.paraSimples || problema.para;
+    const regex = new RegExp(escapeRegex(de), 'gi');
+    codigo = codigo.replace(regex, para);
+  }
+
+  document.getElementById('codigo-saida').value = codigo;
+  document.getElementById('resultado-final-info').innerHTML =
+    `✅ Problema "<strong>${problema.titulo}</strong>" corrigido!`;
+  document.getElementById('resultado-final').classList.add('visivel');
+
+  // Marca como resolvido visualmente
+  const el = document.getElementById('prob-' + id);
+  if (el) {
+    el.classList.add('resolvido');
+    el.querySelector('.problema-titulo').innerHTML =
+      '<span class="badge badge-verde">CORRIGIDO</span> ' + problema.titulo;
+  }
+}
+
+// =============================================
+// CORRIGIR TUDO DE UMA VEZ
+// =============================================
+function corrigirTudo() {
+  let codigo = document.getElementById('codigo-entrada').value;
+  const novaChaveGlobal = document.getElementById('nova-chave-global').value.trim();
+
+  let totalCorrigidos = 0;
+  let relatorio = [];
+
+  problemasEncontrados.forEach(p => {
+    if (p.precisaNovaChave) {
+      const chaveLocal = document.getElementById('chave-' + p.id)?.value?.trim();
+      const chave = chaveLocal || novaChaveGlobal;
+      if (!chave) {
+        relatorio.push(`⚠️ ${p.titulo} — pulado (sem nova chave)`);
+        return;
+      }
+      const regex = new RegExp(p.regex.source, 'g');
+      const antes = codigo;
+      codigo = codigo.replace(regex, chave);
+      if (codigo !== antes) {
+        totalCorrigidos += p.ocorrencias;
+        relatorio.push(`✅ Chave antiga → nova chave (${p.ocorrencias}x)`);
+      }
+    } else {
+      const de = p.deSimples || p.de;
+      const para = p.paraSimples || p.para;
+      const regex = new RegExp(escapeRegex(de), 'gi');
+      const antes = codigo;
+      codigo = codigo.replace(regex, para);
+      if (codigo !== antes) {
+        totalCorrigidos += p.ocorrencias;
+        relatorio.push(`✅ "${de}" → "${para}" (${p.ocorrencias}x)`);
+      }
+    }
+  });
+
+  if (totalCorrigidos === 0 && !novaChaveGlobal) {
+    alert('Nenhuma correção automática foi aplicada.\n\nSe tem chave antiga, cole a nova chave no campo acima.');
+    return;
+  }
+
+  document.getElementById('codigo-saida').value = codigo;
+  document.getElementById('resultado-final-info').innerHTML =
+    `✅ <strong>${totalCorrigidos} correção(ões)</strong> aplicada(s):<br>` +
+    relatorio.map(r => `• ${r}`).join('<br>');
+  document.getElementById('resultado-final').classList.add('visivel');
+  document.getElementById('resultado-final').scrollIntoView({ behavior: 'smooth' });
+
+  // Marca todos como resolvidos
+  problemasEncontrados.forEach(p => {
+    const el = document.getElementById('prob-' + p.id);
+    if (el) el.classList.add('resolvido');
+  });
+}
+
+// =============================================
+// COPIAR RESULTADO
+// =============================================
+function copiarResultado() {
+  const texto = document.getElementById('codigo-saida').value;
+  if (!texto) { alert('Nada para copiar ainda!'); return; }
+  navigator.clipboard.writeText(texto).then(() => {
+    alert('✅ Código copiado! Cole onde precisar.');
+  }).catch(() => {
+    document.getElementById('codigo-saida').select();
+    document.execCommand('copy');
+    alert('✅ Código copiado!');
+  });
+}
+
+// =============================================
+// ANALISAR NOVAMENTE (usa o resultado como entrada)
+// =============================================
+function analisarNovamente() {
+  const resultado = document.getElementById('codigo-saida').value;
+  if (resultado) {
+    document.getElementById('codigo-entrada').value = resultado;
+    document.getElementById('codigo-saida').value = '';
+    document.getElementById('resultado-final').classList.remove('visivel');
+  }
+  analisarCodigo();
+}
+
+// =============================================
+// LIMPAR
+// =============================================
+function limparTudo() {
+  document.getElementById('codigo-entrada').value = '';
+  document.getElementById('codigo-saida').value = '';
+  document.getElementById('area-analise').style.display = 'none';
+  document.getElementById('resultado-final').classList.remove('visivel');
+  problemasEncontrados = [];
+}
+
+// =============================================
+// UTILITÁRIOS
+// =============================================
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+
+</body>
+</html>

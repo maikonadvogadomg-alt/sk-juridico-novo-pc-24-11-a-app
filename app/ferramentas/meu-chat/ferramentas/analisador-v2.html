@@ -1,0 +1,1480 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analisador Local de Projetos — V2</title>
+
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --panel2: #1e293b;
+      --panel3: #020617;
+      --border: #334155;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --primary: #38bdf8;
+      --success: #4ade80;
+      --warning: #facc15;
+      --danger: #f87171;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    button {
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 8px 11px;
+      color: var(--text);
+      background: var(--panel2);
+      cursor: pointer;
+    }
+
+    button:hover {
+      border-color: var(--primary);
+      background: #263750;
+    }
+
+    button.primary {
+      color: white;
+      background: #0369a1;
+      border-color: var(--primary);
+    }
+
+    button.danger {
+      background: #7f1d1d;
+      border-color: #ef4444;
+    }
+
+    button.success {
+      background: #166534;
+      border-color: var(--success);
+    }
+
+    button:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    input,
+    textarea,
+    select {
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 9px;
+      color: var(--text);
+      background: var(--panel3);
+      outline: none;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: var(--primary);
+    }
+
+    header {
+      padding: 20px 24px;
+      background: #020617;
+      border-bottom: 1px solid var(--border);
+    }
+
+    header h1 {
+      margin: 0 0 6px;
+      font-size: 24px;
+    }
+
+    header p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 13px 20px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .toolbar input[type="search"] {
+      min-width: 230px;
+      flex: 1;
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    .status {
+      padding: 8px 20px;
+      color: var(--muted);
+      background: var(--panel3);
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+
+    .status.ok {
+      color: var(--success);
+    }
+
+    .status.warning {
+      color: var(--warning);
+    }
+
+    .status.error {
+      color: var(--danger);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 270px minmax(420px, 1fr) 390px;
+      min-height: calc(100vh - 150px);
+    }
+
+    .panel {
+      min-width: 0;
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+    }
+
+    .panel:last-child {
+      border-right: 0;
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-height: 48px;
+      padding: 10px 13px;
+      background: #0b1220;
+      border-bottom: 1px solid var(--border);
+      font-weight: bold;
+    }
+
+    .panel-title small {
+      color: var(--muted);
+      font-weight: normal;
+    }
+
+    #fileList {
+      max-height: calc(100vh - 198px);
+      overflow: auto;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      width: 100%;
+      padding: 9px 12px;
+      border: 0;
+      border-radius: 0;
+      text-align: left;
+      background: transparent;
+    }
+
+    .file-item.active,
+    .file-item:hover {
+      background: #1e3a5f;
+    }
+
+    .file-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .file-delete {
+      flex: 0 0 auto;
+      padding: 3px 7px;
+      color: #fecaca;
+      background: transparent;
+      border: 0;
+    }
+
+    .empty {
+      padding: 25px 15px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .editor-info {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 9px 12px;
+      color: var(--muted);
+      background: #0b1220;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+
+    #editor {
+      display: block;
+      width: 100%;
+      height: calc(100vh - 247px);
+      min-height: 450px;
+      resize: none;
+      padding: 15px;
+      border: 0;
+      border-radius: 0;
+      color: #dbeafe;
+      background: #020617;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 13px;
+      line-height: 1.55;
+      tab-size: 2;
+    }
+
+    .analysis {
+      height: calc(100vh - 198px);
+      overflow: auto;
+      padding: 12px;
+    }
+
+    .analysis h3 {
+      margin: 15px 0 7px;
+      color: var(--primary);
+      font-size: 16px;
+    }
+
+    .analysis h3:first-child {
+      margin-top: 0;
+    }
+
+    .card {
+      margin: 7px 0;
+      padding: 9px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: #0b1220;
+    }
+
+    .card strong {
+      color: #bae6fd;
+    }
+
+    .item {
+      display: block;
+      width: 100%;
+      margin: 5px 0;
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      text-align: left;
+      background: #0b1220;
+    }
+
+    .item:hover {
+      border-color: var(--primary);
+      background: #172554;
+    }
+
+    .item small {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+    }
+
+    code,
+    pre {
+      font-family: Consolas, "Courier New", monospace;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .badge {
+      display: inline-block;
+      margin: 2px;
+      padding: 3px 7px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: #bae6fd;
+      background: #172554;
+      font-size: 12px;
+    }
+
+    .preview {
+      width: 100%;
+      min-height: 250px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: white;
+    }
+
+    .tree {
+      padding-left: 10px;
+      font-family: Consolas, monospace;
+      font-size: 12px;
+    }
+
+    .tree div {
+      margin: 3px 0;
+      color: #cbd5e1;
+    }
+
+    .ok {
+      color: var(--success);
+    }
+
+    .error {
+      color: var(--danger);
+    }
+
+    .warning {
+      color: var(--warning);
+    }
+
+    @media (max-width: 1150px) {
+      .layout {
+        grid-template-columns: 235px minmax(350px, 1fr);
+      }
+
+      .analysis-panel {
+        grid-column: 1 / -1;
+        border-top: 1px solid var(--border);
+      }
+
+      .analysis {
+        height: auto;
+        max-height: 540px;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .layout {
+        display: block;
+      }
+
+      .panel {
+        border-right: 0;
+        border-bottom: 1px solid var(--border);
+      }
+
+      #fileList,
+      #editor {
+        max-height: 430px;
+        height: 430px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Analisador Local de Projetos — V2</h1>
+    <p>
+      Importe, edite, pesquise, fragmente, indexe, salve e exporte seus códigos diretamente no navegador.
+    </p>
+  </header>
+
+  <div class="toolbar">
+    <label>
+      <input id="folderInput" class="file-input" type="file" webkitdirectory directory multiple>
+      <button id="folderButton">📁 Selecionar pasta</button>
+    </label>
+
+    <label>
+      <input id="filesInput" class="file-input" type="file" multiple>
+      <button id="filesButton">📄 Selecionar arquivos</button>
+    </label>
+
+    <button id="pasteButton">📋 Colar código</button>
+    <button id="newButton">➕ Novo arquivo</button>
+    <button id="saveButton" class="success">💾 Salvar agora</button>
+    <button id="downloadButton" disabled>⬇️ Baixar atual</button>
+    <button id="markdownButton">Exportar Markdown</button>
+    <button id="htmlButton">Exportar HTML</button>
+    <input id="searchInput" type="search" placeholder="Pesquisar em todos os arquivos">
+    <button id="searchButton" class="primary">Pesquisar</button>
+    <button id="clearButton" class="danger">Limpar tudo</button>
+  </div>
+
+  <div id="status" class="status">Nenhum arquivo carregado.</div>
+
+  <main class="layout">
+    <section class="panel">
+      <div class="panel-title">
+        <span>Arquivos</span>
+        <small id="fileCount">0</small>
+      </div>
+      <div id="fileList"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title">
+        <span id="currentTitle">Editor</span>
+        <small id="currentType"></small>
+      </div>
+      <div class="editor-info">
+        <span id="editorInfo">Nenhum arquivo aberto</span>
+        <span id="saveInfo">Auto-save ativo</span>
+      </div>
+      <textarea id="editor" spellcheck="false" placeholder="Abra ou cole um arquivo aqui..."></textarea>
+    </section>
+
+    <section class="panel analysis-panel">
+      <div class="panel-title">
+        <span>Análise, índice e resultados</span>
+      </div>
+      <div id="analysis" class="analysis">
+        <div class="empty">Abra um arquivo para iniciar.</div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    "use strict";
+
+    const ACCEPTED = new Set([
+      "html", "htm", "xhtml",
+      "css", "scss", "sass", "less",
+      "js", "mjs", "cjs", "jsx",
+      "ts", "tsx",
+      "vue", "svelte",
+      "json", "jsonc", "map",
+      "xml", "svg",
+      "md", "markdown", "txt",
+      "yaml", "yml",
+      "sql",
+      "py", "java", "c", "h", "cpp", "hpp",
+      "cs", "php", "go", "rs",
+      "rb", "sh", "bash",
+      "bat", "ps1",
+      "dockerfile", "env",
+      "graphql", "gql",
+      "toml", "ini", "conf"
+    ]);
+
+    const STORAGE_KEY = "analisador-projetos-v2";
+
+    const files = new Map();
+    let currentPath = null;
+    let saveTimer = null;
+
+    const $ = id => document.getElementById(id);
+
+    $("folderButton").onclick = () => $("folderInput").click();
+    $("filesButton").onclick = () => $("filesInput").click();
+
+    $("folderInput").onchange = e => {
+      importFiles([...e.target.files]);
+      e.target.value = "";
+    };
+
+    $("filesInput").onchange = e => {
+      importFiles([...e.target.files]);
+      e.target.value = "";
+    };
+
+    $("editor").addEventListener("input", () => {
+      if (!currentPath || !files.has(currentPath)) return;
+
+      files.get(currentPath).text = $("editor").value;
+      files.get(currentPath).size = new Blob([$("editor").value]).size;
+
+      updateEditorInfo();
+      scheduleSave();
+      analyzeCurrent();
+    });
+
+    $("editor").addEventListener("keydown", event => {
+      if (event.key === "Tab") {
+        event.preventDefault();
+
+        const editor = $("editor");
+        const start = editor.selectionStart;
+        const end = editor.selectionEnd;
+
+        editor.value =
+          editor.value.slice(0, start) +
+          "  " +
+          editor.value.slice(end);
+
+        editor.selectionStart = editor.selectionEnd = start + 2;
+        editor.dispatchEvent(new Event("input"));
+      }
+    });
+
+    $("pasteButton").onclick = pasteCode;
+    $("newButton").onclick = newFile;
+    $("saveButton").onclick = () => saveProject(true);
+    $("downloadButton").onclick = downloadCurrent;
+    $("markdownButton").onclick = () => exportProject("md");
+    $("htmlButton").onclick = () => exportProject("html");
+    $("searchButton").onclick = runSearch;
+
+    $("searchInput").addEventListener("keydown", event => {
+      if (event.key === "Enter") runSearch();
+    });
+
+    $("clearButton").onclick = () => {
+      if (!confirm("Apagar todos os arquivos e o auto-save?")) return;
+
+      files.clear();
+      currentPath = null;
+      localStorage.removeItem(STORAGE_KEY);
+      renderFileList();
+      renderEmpty();
+      setStatus("Projeto limpo.", "warning");
+    };
+
+    function extension(path) {
+      const name = path.toLowerCase().split("/").pop();
+      if (name === "dockerfile") return "dockerfile";
+      if (name.startsWith(".env")) return "env";
+
+      const parts = name.split(".");
+      return parts.length > 1 ? parts.pop() : "";
+    }
+
+    function normalize(path) {
+      return String(path || "arquivo.txt")
+        .replaceAll("\\", "/")
+        .replace(/^\/+/, "");
+    }
+
+    function setStatus(message, type = "") {
+      $("status").textContent = message;
+      $("status").className = "status " + type;
+    }
+
+    function formatBytes(bytes) {
+      if (!bytes) return "0 bytes";
+
+      const units = ["bytes", "KB", "MB", "GB"];
+      const index = Math.min(
+        Math.floor(Math.log(bytes) / Math.log(1024)),
+        units.length - 1
+      );
+
+      return `${(bytes / 1024 ** index).toFixed(index ? 1 : 0)} ${units[index]}`;
+    }
+
+    function importFiles(list) {
+      const compatible = list.filter(file => ACCEPTED.has(extension(file.name)));
+
+      if (!compatible.length) {
+        setStatus("Nenhum formato compatível foi encontrado.", "error");
+        return;
+      }
+
+      let pending = compatible.length;
+
+      compatible.forEach(file => {
+        const reader = new FileReader();
+        const path = normalize(file.webkitRelativePath || file.name);
+
+        reader.onload = () => {
+          files.set(path, {
+            path,
+            name: file.name,
+            type: file.type || "texto",
+            size: file.size,
+            text: String(reader.result || "")
+          });
+
+          pending--;
+
+          if (!pending) {
+            renderFileList();
+
+            if (!currentPath) {
+              openFile([...files.keys()].sort()[0]);
+            } else {
+              analyzeCurrent();
+            }
+
+            saveProject();
+            setStatus(`${files.size} arquivo(s) carregado(s). Auto-save atualizado.`, "ok");
+          }
+        };
+
+        reader.onerror = () => {
+          pending--;
+          if (!pending) setStatus("Importação finalizada com alguns erros.", "warning");
+        };
+
+        reader.readAsText(file);
+      });
+    }
+
+    function renderFileList() {
+      const list = $("fileList");
+      list.replaceChildren();
+      $("fileCount").textContent = files.size;
+
+      if (!files.size) {
+        list.innerHTML = '<div class="empty">Nenhum arquivo carregado.</div>';
+        return;
+      }
+
+      [...files.keys()]
+        .sort((a, b) => a.localeCompare(b))
+        .forEach(path => {
+          const row = document.createElement("div");
+          row.className = "file-item" + (path === currentPath ? " active" : "");
+
+          const open = document.createElement("button");
+          open.className = "file-name";
+          open.textContent = path;
+          open.title = path;
+          open.onclick = () => openFile(path);
+
+          const remove = document.createElement("button");
+          remove.className = "file-delete";
+          remove.textContent = "×";
+          remove.title = "Excluir arquivo";
+          remove.onclick = event => {
+            event.stopPropagation();
+
+            if (!confirm(`Excluir ${path}?`)) return;
+
+            files.delete(path);
+
+            if (currentPath === path) {
+              currentPath = null;
+              $("editor").value = "";
+              $("currentTitle").textContent = "Editor";
+              $("currentType").textContent = "";
+            }
+
+            renderFileList();
+
+            if (!currentPath && files.size) {
+              openFile([...files.keys()].sort()[0]);
+            } else {
+              analyzeCurrent();
+            }
+
+            saveProject();
+          };
+
+          row.append(open, remove);
+          list.appendChild(row);
+        });
+    }
+
+    function openFile(path) {
+      const file = files.get(path);
+      if (!file) return;
+
+      currentPath = path;
+      $("editor").value = file.text;
+      $("currentTitle").textContent = path;
+      $("currentType").textContent = extension(path).toUpperCase() || "TEXTO";
+      $("downloadButton").disabled = false;
+
+      updateEditorInfo();
+      renderFileList();
+      analyzeCurrent();
+    }
+
+    function updateEditorInfo() {
+      if (!currentPath || !files.has(currentPath)) {
+        $("editorInfo").textContent = "Nenhum arquivo aberto";
+        return;
+      }
+
+      const text = $("editor").value;
+      const lines = text.split(/\r?\n/).length;
+      const bytes = new Blob([text]).size;
+
+      $("editorInfo").textContent =
+        `${formatBytes(bytes)} • ${lines} linha(s) • ${text.length} caractere(s)`;
+    }
+
+    function scheduleSave() {
+      clearTimeout(saveTimer);
+      $("saveInfo").textContent = "Salvando...";
+
+      saveTimer = setTimeout(() => saveProject(), 700);
+    }
+
+    function saveProject(showMessage = false) {
+      try {
+        const data = [...files.values()].map(file => ({
+          path: file.path,
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          text: file.text
+        }));
+
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          savedAt: new Date().toISOString(),
+          files: data
+        }));
+
+        $("saveInfo").textContent =
+          "Salvo em " + new Date().toLocaleTimeString("pt-BR");
+
+        if (showMessage) setStatus("Projeto salvo no navegador.", "ok");
+      } catch (error) {
+        $("saveInfo").textContent = "Falha no auto-save";
+        setStatus(
+          "Não foi possível salvar. O limite de armazenamento do navegador pode ter sido atingido.",
+          "error"
+        );
+      }
+    }
+
+    function restoreProject() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+
+        const data = JSON.parse(raw);
+
+        (data.files || []).forEach(file => {
+          files.set(file.path, file);
+        });
+
+        if (files.size) {
+          renderFileList();
+          openFile([...files.keys()].sort()[0]);
+          setStatus(`${files.size} arquivo(s) restaurado(s) do auto-save.`, "ok");
+        }
+      } catch {
+        setStatus("O auto-save existente não pôde ser restaurado.", "warning");
+      }
+    }
+
+    async function pasteCode() {
+      let text = "";
+
+      try {
+        text = await navigator.clipboard.readText();
+      } catch {
+        text = prompt("Cole o código abaixo:");
+      }
+
+      if (!text) return;
+
+      const suggested = prompt(
+        "Nome do arquivo:",
+        currentPath || "arquivo.txt"
+      );
+
+      if (!suggested) return;
+
+      const path = normalize(suggested);
+      files.set(path, {
+        path,
+        name: path.split("/").pop(),
+        type: "text/plain",
+        size: new Blob([text]).size,
+        text
+      });
+
+      renderFileList();
+      openFile(path);
+      saveProject();
+      setStatus(`Código colado em ${path}.`, "ok");
+    }
+
+    function newFile() {
+      const name = prompt(
+        "Nome do novo arquivo:",
+        "novo-arquivo.js"
+      );
+
+      if (!name) return;
+
+      const path = normalize(name);
+
+      files.set(path, {
+        path,
+        name: path.split("/").pop(),
+        type: "text/plain",
+        size: 0,
+        text: ""
+      });
+
+      renderFileList();
+      openFile(path);
+      saveProject();
+    }
+
+    function downloadCurrent() {
+      if (!currentPath || !files.has(currentPath)) return;
+
+      const text = $("editor").value;
+      const blob = new Blob([text], {
+        type: "text/plain;charset=utf-8"
+      });
+
+      downloadBlob(blob, currentPath.split("/").pop());
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function createElement(tag, text = "") {
+      const element = document.createElement(tag);
+      element.textContent = text;
+      return element;
+    }
+
+    function heading(text) {
+      return createElement("h3", text);
+    }
+
+    function card(label, value, className = "") {
+      const div = document.createElement("div");
+      div.className = "card " + className;
+
+      const strong = createElement("strong", label + ": ");
+      const code = createElement("code", value);
+
+      div.append(strong, code);
+      return div;
+    }
+
+    function item(title, detail, line, callback) {
+      const button = document.createElement("button");
+      button.className = "item";
+      button.append(
+        createElement("strong", title),
+        createElement("small", `${detail || ""}${line ? " • Linha " + line : ""}`)
+      );
+
+      if (callback) button.onclick = callback;
+      return button;
+    }
+
+    function lineMatches(text, regex) {
+      const result = [];
+
+      text.split(/\r?\n/).forEach((line, index) => {
+        regex.lastIndex = 0;
+
+        if (regex.test(line)) {
+          result.push({
+            line: index + 1,
+            text: line.trim()
+          });
+        }
+      });
+
+      return result;
+    }
+
+    function renderMatches(panel, title, matches) {
+      panel.appendChild(heading(`${title} (${matches.length})`));
+
+      if (!matches.length) {
+        panel.appendChild(card("Resultado", "Nenhum item identificado."));
+        return;
+      }
+
+      matches.forEach(match => {
+        const button = item(
+          match.text || "(linha vazia)",
+          "",
+          match.line,
+          () => focusLine(match.line)
+        );
+
+        panel.appendChild(button);
+      });
+    }
+
+    function focusLine(lineNumber) {
+      const editor = $("editor");
+      const lines = editor.value.split(/\r?\n/);
+      let position = 0;
+
+      for (let i = 0; i < lineNumber - 1; i++) {
+        position += lines[i].length + 1;
+      }
+
+      editor.focus();
+      editor.setSelectionRange(position, position + (lines[lineNumber - 1] || "").length);
+    }
+
+    function analyzeCurrent() {
+      const panel = $("analysis");
+      panel.replaceChildren();
+
+      if (!currentPath || !files.has(currentPath)) {
+        panel.innerHTML = '<div class="empty">Abra um arquivo para iniciar.</div>';
+        return;
+      }
+
+      const text = $("editor").value;
+      const ext = extension(currentPath);
+
+      panel.appendChild(heading("Análise: " + currentPath));
+      panel.appendChild(card("Extensão", ext || "sem extensão"));
+      panel.appendChild(card("Tamanho", formatBytes(new Blob([text]).size)));
+      panel.appendChild(card("Linhas", String(text.split(/\r?\n/).length)));
+
+      renderIndex(text, ext, panel);
+      analyzeByType(text, ext, panel);
+    }
+
+    function detectBlocks(text, ext) {
+      const lines = text.split(/\r?\n/);
+      const blocks = [];
+
+      const patterns = {
+        js: /^\s*(?:export\s+)?(?:async\s+)?function\s+[\w$]+|^\s*(?:export\s+)?class\s+[\w$]+|^\s*(?:export\s+)?const\s+[\w$]+\s*=\s*(?:async\s*)?(?:\([^)]*\)|[\w$]+)\s*=>/,
+        mjs: /^\s*(?:export\s+)?(?:async\s+)?function\s+[\w$]+|^\s*(?:export\s+)?class\s+[\w$]+|^\s*(?:export\s+)?const\s+[\w$]+\s*=/,
+        cjs: /^\s*(?:async\s+)?function\s+[\w$]+|^\s*class\s+[\w$]+/,
+        ts: /^\s*(?:export\s+)?(?:async\s+)?function\s+[\w$]+|^\s*(?:export\s+)?class\s+[\w$]+|^\s*(?:export\s+)?interface\s+[\w$]+|^\s*(?:export\s+)?type\s+[\w$]+/,
+        tsx: /^\s*(?:export\s+)?(?:async\s+)?function\s+[\w$]+|^\s*(?:export\s+)?class\s+[\w$]+|^\s*(?:export\s+)?const\s+[\w$]+\s*=/,
+        jsx: /^\s*(?:export\s+)?function\s+[\w$]+|^\s*(?:export\s+)?const\s+[A-Z][\w$]*\s*=/,
+        py: /^\s*(?:async\s+)?def\s+\w+|^\s*class\s+\w+/,
+        java: /^\s*(?:public\s+|private\s+|protected\s+)?(?:static\s+)?class\s+\w+|^\s*(?:public|private|protected).*\([^;]*\)\s*\{/,
+        c: /^\s*(?:static\s+)?[\w*]+\s+\w+\s*\([^;]*\)\s*\{/,
+        cpp: /^\s*(?:static\s+)?[\w:<>,*]+\s+\w+\s*\([^;]*\)\s*\{/,
+        php: /^\s*(?:public\s+|private\s+|protected\s+)?function\s+\w+|^\s*class\s+\w+/,
+        go: /^\s*func\s+(?:\([^)]*\)\s*)?\w+/,
+        rs: /^\s*(?:pub\s+)?fn\s+\w+|^\s*(?:pub\s+)?struct\s+\w+|^\s*(?:pub\s+)?enum\s+\w+/,
+        css: /^\s*(?:@media|@supports|@keyframes)|^\s*[^/*@\s][^{]*\{/,
+        scss: /^\s*(?:@mixin|@include|@media)|^\s*[^/*@\s][^{]*\{/,
+        html: /^\s*<(?:section|article|main|header|footer|form|script|style|template)\b/i,
+        htm: /^\s*<(?:section|article|main|header|footer|form|script|style|template)\b/i,
+        sql: /^\s*(?:CREATE|ALTER|INSERT|UPDATE|DELETE|SELECT|WITH)\b/i,
+        md: /^\s{0,3}#{1,6}\s+/i,
+        markdown: /^\s{0,3}#{1,6}\s+/i
+      };
+
+      const pattern = patterns[ext] || /^\s*(?:function|class|def|fn|section|module|component)\b/i;
+
+      lines.forEach((line, index) => {
+        if (pattern.test(line)) {
+          blocks.push({
+            line: index + 1,
+            title: line.trim().slice(0, 100)
+          });
+        }
+      });
+
+      return blocks;
+    }
+
+    function renderIndex(text, ext, panel) {
+      const blocks = detectBlocks(text, ext);
+
+      panel.appendChild(heading(`Índice de blocos (${blocks.length})`));
+
+      if (!blocks.length) {
+        panel.appendChild(card(
+          "Informação",
+          "Nenhuma função, classe, componente ou seção principal foi identificada."
+        ));
+        return;
+      }
+
+      blocks.forEach((block, index) => {
+        const next = blocks[index + 1];
+        const end = next ? next.line - 1 : text.split(/\r?\n/).length;
+
+        const button = item(
+          `${index + 1}. ${block.title}`,
+          `Linhas ${block.line} até ${end}`,
+          "",
+          () => focusLine(block.line)
+        );
+
+        panel.appendChild(button);
+      });
+    }
+
+    function analyzeByType(text, ext, panel) {
+      const scriptExt = [
+        "js", "mjs", "cjs", "ts", "tsx", "jsx",
+        "vue", "svelte", "py", "java", "c", "h",
+        "cpp", "hpp", "cs", "php", "go", "rs",
+        "rb", "sh", "bash", "ps1"
+      ];
+
+      if (scriptExt.includes(ext)) {
+        renderMatches(panel, "Imports", lineMatches(
+          text,
+          /^\s*(?:import\b|from\s+['"]|require\s*\(|using\s+|include\s*[<"]|use\s+)/gm
+        ));
+
+        renderMatches(panel, "Exports", lineMatches(
+          text,
+          /^\s*(?:export\b|module\.exports|exports\.)/gm
+        ));
+
+        renderMatches(panel, "Funções e classes", detectBlocks(text, ext));
+
+        renderMatches(panel, "Hooks, eventos e APIs", lineMatches(
+          text,
+          /\b(?:use[A-Z]\w*|onClick|onChange|onSubmit|addEventListener|fetch|axios|localStorage|sessionStorage|console\.log)\b/g
+        ));
+
+        renderMatches(panel, "TODO, FIXME e observações", lineMatches(
+          text,
+          /\b(?:TODO|FIXME|BUG|HACK|XXX)\b/gi
+        ));
+
+        return;
+      }
+
+      if (["html", "htm", "xhtml", "vue", "svelte"].includes(ext)) {
+        try {
+          const doc = new DOMParser().parseFromString(text, "text/html");
+          const tags = [...doc.querySelectorAll("*")];
+
+          panel.appendChild(heading("Estrutura HTML"));
+          panel.appendChild(card("Quantidade de elementos", String(tags.length)));
+
+          const tagCount = {};
+          tags.forEach(tag => {
+            const name = tag.tagName.toLowerCase();
+            tagCount[name] = (tagCount[name] || 0) + 1;
+          });
+
+          Object.entries(tagCount)
+            .sort((a, b) => b[1] - a[1])
+            .forEach(([tag, count]) => {
+              const span = createElement("span", `<${tag}> × ${count}`);
+              span.className = "badge";
+              panel.appendChild(span);
+            });
+
+          if (ext === "html" || ext === "htm") {
+            const iframe = document.createElement("iframe");
+            iframe.className = "preview";
+            iframe.sandbox = "";
+            iframe.srcdoc = text;
+
+            panel.appendChild(heading("Preview seguro"));
+            panel.appendChild(iframe);
+          }
+
+          renderMatches(panel, "Scripts e estilos incorporados", lineMatches(
+            text,
+            /<(?:script|style|link|img|form)\b/gi
+          ));
+        } catch {
+          panel.appendChild(card("Aviso", "Não foi possível analisar a estrutura HTML.", "warning"));
+        }
+
+        return;
+      }
+
+      if (["css", "scss", "sass", "less"].includes(ext)) {
+        renderMatches(panel, "Seletores e blocos", lineMatches(
+          text,
+          /^\s*(?:@media|@supports|@keyframes|[^/*@\s][^{]*)\s*\{/gm
+        ));
+
+        renderMatches(panel, "Variáveis", lineMatches(
+          text,
+          /(--[\w-]+|^\s*\$[\w-]+)/gm
+        ));
+
+        const open = (text.match(/{/g) || []).length;
+        const close = (text.match(/}/g) || []).length;
+
+        panel.appendChild(card(
+          "Balanceamento de chaves",
+          open === close ? "Aparentemente correto" : `Possível problema: ${open} abertura(s) e ${close} fechamento(s)`,
+          open === close ? "ok" : "warning"
+        ));
+
+        return;
+      }
+
+      if (["json", "jsonc", "map"].includes(ext)) {
+        try {
+          const parsed = JSON.parse(
+            text.replace(/^\s*\/\/.*$/gm, "")
+          );
+
+          panel.appendChild(card("JSON", "Válido", "ok"));
+          panel.appendChild(card(
+            "Tipo principal",
+            Array.isArray(parsed) ? "array" : typeof parsed
+          ));
+
+          if (parsed && typeof parsed === "object") {
+            panel.appendChild(card(
+              "Propriedades",
+              String(Object.keys(parsed).length)
+            ));
+          }
+        } catch (error) {
+          panel.appendChild(card("JSON", "Possivelmente inválido", "error"));
+          panel.appendChild(card("Detalhe", error.message, "error"));
+        }
+
+        return;
+      }
+
+      if (ext === "svg") {
+        const doc = new DOMParser().parseFromString(text, "image/svg+xml");
+        const svg = doc.documentElement;
+
+        if (!svg || svg.tagName.toLowerCase() !== "svg") {
+          panel.appendChild(card("SVG", "Possivelmente inválido", "error"));
+          return;
+        }
+
+        panel.appendChild(card("SVG", "Aparentemente válido", "ok"));
+        panel.appendChild(card(
+          "Dimensões",
+          `${svg.getAttribute("width") || "não informada"} × ${svg.getAttribute("height") || "não informada"}`
+        ));
+        panel.appendChild(card(
+          "ViewBox",
+          svg.getAttribute("viewBox") || "não informado"
+        ));
+        panel.appendChild(card(
+          "Elementos",
+          String(svg.querySelectorAll("*").length)
+        ));
+
+        return;
+      }
+
+      if (["md", "markdown"].includes(ext)) {
+        renderMatches(panel, "Títulos do Markdown", lineMatches(
+          text,
+          /^\s{0,3}#{1,6}\s+.+/gm
+        ));
+        return;
+      }
+
+      renderMatches(panel, "Linhas importantes", lineMatches(
+        text,
+        /^\s*(?:CREATE|ALTER|SELECT|INSERT|UPDATE|DELETE|module|section|component|pipeline|stage)\b/igm
+      ));
+    }
+
+    function runSearch() {
+      const term = $("searchInput").value.trim().toLocaleLowerCase();
+
+      if (!term) {
+        setStatus("Digite algo para pesquisar.", "warning");
+        return;
+      }
+
+      const panel = $("analysis");
+      panel.replaceChildren();
+      panel.appendChild(heading("Resultados da pesquisa"));
+
+      let total = 0;
+
+      files.forEach(file => {
+        file.text.split(/\r?\n/).forEach((line, index) => {
+          if (!line.toLocaleLowerCase().includes(term)) return;
+
+          total++;
+
+          const button = item(
+            file.path,
+            line.trim() || "(linha vazia)",
+            index + 1,
+            () => {
+              openFile(file.path);
+              focusLine(index + 1);
+            }
+          );
+
+          panel.appendChild(button);
+        });
+      });
+
+      if (!total) {
+        panel.appendChild(card("Resultado", "Nenhuma ocorrência encontrada."));
+      }
+
+      setStatus(`${total} ocorrência(s) encontrada(s).`);
+    }
+
+    function splitBlocks(text, ext) {
+      const blocks = detectBlocks(text, ext);
+      const lines = text.split(/\r?\n/);
+
+      if (!blocks.length) {
+        return [{
+          title: "Arquivo completo",
+          start: 1,
+          end: lines.length,
+          text
+        }];
+      }
+
+      return blocks.map((block, index) => {
+        const startIndex = block.line - 1;
+        const endIndex = index + 1 < blocks.length
+          ? blocks[index + 1].line - 1
+          : lines.length;
+
+        return {
+          title: block.title,
+          start: block.line,
+          end: endIndex,
+          text: lines.slice(startIndex, endIndex).join("\n")
+        };
+      });
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function projectMarkdown() {
+      let output = "# Relatório do projeto\n\n";
+      output += `Gerado em: ${new Date().toLocaleString("pt-BR")}\n\n`;
+      output += "## Índice de arquivos\n\n";
+
+      [...files.keys()].sort().forEach(path => {
+        output += `- [${path}](#${path.replace(/[^\w]+/g, "-")})\n`;
+      });
+
+      [...files.keys()].sort().forEach(path => {
+        const file = files.get(path);
+        const ext = extension(path) || "text";
+
+        output += `\n## ${path}\n\n`;
+        output += `- Tamanho: ${formatBytes(new Blob([file.text]).size)}\n`;
+        output += `- Linhas: ${file.text.split(/\r?\n/).length}\n\n`;
+
+        const blocks = splitBlocks(file.text, ext);
+
+        output += "### Índice interno\n\n";
+        blocks.forEach((block, index) => {
+          output += `${index + 1}. Linha ${block.start}: ${block.title}\n`;
+        });
+
+        output += `\n\`\`\`${ext}\n${file.text}\n\`\`\`\n`;
+      });
+
+      return output;
+    }
+
+    function projectHtml() {
+      const sections = [...files.keys()].sort().map(path => {
+        const file = files.get(path);
+        const ext = extension(path) || "text";
+        const blocks = splitBlocks(file.text, ext);
+
+        const index = blocks.map((block, number) =>
+          `<li><a href="#${slug(path)}-bloco-${number}">${escapeHtml(block.title)}</a> — linha ${block.start}</li>`
+        ).join("");
+
+        const codeBlocks = blocks.map((block, number) => `
+          <article class="block" id="${slug(path)}-bloco-${number}">
+            <div class="block-title">
+              <strong>${escapeHtml(block.title)}</strong>
+              <span>Linhas ${block.start}–${block.end}</span>
+            </div>
+            <button class="copy" onclick="copyCode(this)">Copiar bloco</button>
+            <pre><code>${escapeHtml(block.text)}</code></pre>
+          </article>
+        `).join("");
+
+        return `
+          <section class="file" id="${slug(path)}">
+            <h2>${escapeHtml(path)}</h2>
+            <p>${formatBytes(new Blob([file.text]).size)} • ${file.text.split(/\r?\n/).length} linha(s)</p>
+            <h3>Índice do arquivo</h3>
+            <ol>${index}</ol>
+            ${codeBlocks}
+          </section>
+        `;
+      }).join("");
+
+      return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Relatório de código</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 30px;
+      color: #dbeafe;
+      background: #0f172a;
+      font-family: Arial, sans-serif;
+    }
+
+    h1, h2, h3 {
+      color: #7dd3fc;
+    }
+
+    .file {
+      margin: 30px 0;
+      padding: 20px;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      background: #111827;
+    }
+
+    .block {
+      position: relative;
+      margin: 18px 0;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #020617;
+    }
+
+    .block-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      padding: 10px;
+      color: #bae6fd;
+      background: #172554;
+    }
+
+    .block-title span {
+      color: #94a3b8;
+      font-size: 12px;
+    }
+
+    pre {
+      margin: 0;
+      padding: 15px;
+      overflow: auto;
+      color: #dbeafe;
+      font: 13px/1.5 Consolas, monospace;
+      white-space: pre-wrap;
+    }
+
+    .copy {
+      margin: 10px;
+      padding: 7px 10px;
+      color: white;
+      background: #0369a1;
+      border: 1px solid #38bdf8;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    a {
+      color: #7dd3fc;
+    }
+  </style>
+</head>
+<body>
+  <h1>Relatório de código</h1>
+  <p>Gerado em ${escapeHtml(new Date().toLocaleString("pt-BR"))}</p>
+  ${sections}
+
+  <script>
+    async function copyCode(button) {
+      const code = button.parentElement.querySelector("code").innerText;
+
+      try {
+        await navigator.clipboard.writeText(code);
+        const old = button.textContent;
+        button.textContent = "Copiado!";
+        setTimeout(() => button.textContent = old, 1200);
+      } catch {
+        alert("Não foi possível copiar automaticamente.");
+      }
+    }
+  <\/script>
+</body>
+</html>`;
+    }
+
+    function slug(value) {
+      return value
+        .toLowerCase()
+        .replace(/[^\w]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+    }
+
+    function exportProject(type) {
+      if (!files.size) {
+        setStatus("Não há arquivos para exportar.", "warning");
+        return;
+      }
+
+      const content = type === "md"
+        ? projectMarkdown()
+        : projectHtml();
+
+      const blob = new Blob([content], {
+        type: type === "md"
+          ? "text/markdown;charset=utf-8"
+          : "text/html;charset=utf-8"
+      });
+
+      downloadBlob(
+        blob,
+        type === "md"
+          ? "relatorio-projeto.md"
+          : "relatorio-projeto.html"
+      );
+
+      setStatus(`Projeto exportado para ${type.toUpperCase()}.`, "ok");
+    }
+
+    function renderEmpty() {
+      $("fileList").innerHTML =
+        '<div class="empty">Nenhum arquivo carregado.</div>';
+
+      $("analysis").innerHTML =
+        '<div class="empty">Abra um arquivo para iniciar.</div>';
+
+      $("editor").value = "";
+      $("editorInfo").textContent = "Nenhum arquivo aberto";
+      $("currentTitle").textContent = "Editor";
+      $("currentType").textContent = "";
+      $("downloadButton").disabled = true;
+      $("fileCount").textContent = "0";
+    }
+
+    restoreProject();
+    renderFileList();
+
+    if (!files.size) {
+      renderEmpty();
+    }
+  </script>
+</body>
+</html>

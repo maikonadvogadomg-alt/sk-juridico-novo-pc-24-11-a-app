@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔍 Caça Esquema SQL</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0f1117;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  h1 {
+    text-align: center;
+    color: #7c9ef8;
+    margin-bottom: 8px;
+    font-size: 1.4rem;
+  }
+  .sub {
+    text-align: center;
+    color: #888;
+    font-size: 0.85rem;
+    margin-bottom: 24px;
+  }
+  .drop-area {
+    border: 2px dashed #7c9ef8;
+    border-radius: 12px;
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: #1a1d2e;
+    margin-bottom: 20px;
+  }
+  .drop-area:hover, .drop-area.ativo {
+    background: #1e2340;
+    border-color: #a0b4ff;
+  }
+  .drop-area p { color: #aaa; font-size: 0.95rem; }
+  .drop-area span { font-size: 2.5rem; display: block; margin-bottom: 10px; }
+  input[type="file"] { display: none; }
+  .resultado {
+    display: none;
+    background: #1a1d2e;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .resultado.visivel { display: block; }
+  .arquivo-titulo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .arquivo-titulo h3 {
+    color: #7c9ef8;
+    font-size: 0.95rem;
+    word-break: break-all;
+  }
+  .btn-copiar {
+    background: #2a3a6e;
+    color: #a0b4ff;
+    border: 1px solid #3a4a8e;
+    border-radius: 8px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+  .btn-copiar:hover { background: #3a4a9e; }
+  .btn-copiar.copiado {
+    background: #1a4a2e;
+    color: #4caf50;
+    border-color: #4caf50;
+  }
+  pre {
+    background: #0d1117;
+    border-radius: 8px;
+    padding: 14px;
+    overflow-x: auto;
+    font-size: 0.78rem;
+    line-height: 1.6;
+    color: #c9d1d9;
+    max-height: 400px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .status {
+    text-align: center;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    display: none;
+  }
+  .status.visivel { display: block; }
+  .status.ok { background: #1a3a2e; color: #4caf50; }
+  .status.erro { background: #3a1a1a; color: #f44336; }
+  .status.aviso { background: #3a2a1a; color: #ff9800; }
+  .nenhum {
+    text-align: center;
+    color: #888;
+    padding: 20px;
+    display: none;
+  }
+  .nenhum.visivel { display: block; }
+  .contador {
+    text-align: center;
+    color: #7c9ef8;
+    font-size: 0.85rem;
+    margin-bottom: 16px;
+    display: none;
+  }
+  .contador.visivel { display: block; }
+  .btn-limpar {
+    display: block;
+    margin: 0 auto 20px;
+    background: #2a1a1a;
+    color: #f44336;
+    border: 1px solid #4a2a2a;
+    border-radius: 8px;
+    padding: 8px 20px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    display: none;
+  }
+  .btn-limpar.visivel { display: block; }
+  .dica {
+    background: #1a2a1a;
+    border: 1px solid #2a4a2a;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    font-size: 0.82rem;
+    color: #aaa;
+    line-height: 1.6;
+  }
+  .dica strong { color: #4caf50; }
+</style>
+</head>
+<body>
+
+<h1>🔍 Caça Esquema SQL</h1>
+<p class="sub">Encontra arquivos SQL dentro de qualquer ZIP de projeto</p>
+
+<div class="dica">
+  <strong>Como usar:</strong> Arraste o ZIP do seu projeto na área abaixo ou clique para selecionar. 
+  O programa vai procurar automaticamente todos os arquivos <strong>.sql</strong>, 
+  <strong>schema</strong>, <strong>migration</strong> e <strong>database</strong> dentro do ZIP 
+  e mostrar o conteúdo para você copiar e colar no Supabase.
+</div>
+
+<div class="drop-area" id="dropArea">
+  <span>📦</span>
+  <p>Arraste o ZIP do projeto aqui</p>
+  <p style="margin-top:8px; font-size:0.8rem;">ou clique para selecionar</p>
+  <input type="file" id="inputArquivo" accept=".zip">
+</div>
+
+<div class="status" id="status"></div>
+<div class="contador" id="contador"></div>
+<button class="btn-limpar" id="btnLimpar">🗑️ Limpar e tentar outro ZIP</button>
+<div class="nenhum" id="nenhum">
+  ⚠️ Nenhum arquivo SQL encontrado neste ZIP.<br>
+  <span style="font-size:0.8rem; color:#666;">O projeto pode não usar banco de dados ou os arquivos têm outro nome.</span>
+</div>
+<div id="resultados"></div>
+
+<script>
+const dropArea = document.getElementById('dropArea');
+const inputArquivo = document.getElementById('inputArquivo');
+const statusEl = document.getElementById('status');
+const contadorEl = document.getElementById('contador');
+const resultadosEl = document.getElementById('resultados');
+const nenhumEl = document.getElementById('nenhum');
+const btnLimpar = document.getElementById('btnLimpar');
+
+// Palavras que indicam arquivo de banco de dados
+const PALAVRAS_CHAVE = [
+  '.sql',
+  'schema',
+  'migration',
+  'database',
+  'db.js',
+  'db.ts',
+  'supabase',
+  'neon',
+  'postgres',
+  'knex',
+  'sequelize',
+  'prisma'
+];
+
+// Clique na área
+dropArea.addEventListener('click', () => inputArquivo.click());
+
+// Drag and drop
+dropArea.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  dropArea.classList.add('ativo');
+});
+dropArea.addEventListener('dragleave', () => dropArea.classList.remove('ativo'));
+dropArea.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropArea.classList.remove('ativo');
+  const arquivo = e.dataTransfer.files[0];
+  if (arquivo) processarZip(arquivo);
+});
+
+// Seleção normal
+inputArquivo.addEventListener('change', (e) => {
+  if (e.target.files[0]) processarZip(e.target.files[0]);
+});
+
+// Limpar
+btnLimpar.addEventListener('click', () => {
+  resultadosEl.innerHTML = '';
+  statusEl.className = 'status';
+  contadorEl.className = 'contador';
+  nenhumEl.className = 'nenhum';
+  btnLimpar.className = 'btn-limpar';
+  inputArquivo.value = '';
+});
+
+async function processarZip(arquivo) {
+  if (!arquivo.name.endsWith('.zip')) {
+    mostrarStatus('❌ Por favor selecione um arquivo .zip', 'erro');
+    return;
+  }
+
+  mostrarStatus('⏳ Lendo o ZIP... aguarde...', 'aviso');
+  resultadosEl.innerHTML = '';
+  nenhumEl.className = 'nenhum';
+
+  try {
+    const zip = await JSZip.loadAsync(arquivo);
+    const arquivosEncontrados = [];
+
+    // Percorre todos os arquivos do ZIP
+    zip.forEach((caminho, arquivo) => {
+      if (arquivo.dir) return;
+      const caminhoLower = caminho.toLowerCase();
+      const temPalavraChave = PALAVRAS_CHAVE.some(p => caminhoLower.includes(p));
+      if (temPalavraChave) {
+        arquivosEncontrados.push({ caminho, arquivo });
+      }
+    });
+
+    if (arquivosEncontrados.length === 0) {
+      mostrarStatus('✅ ZIP lido com sucesso', 'ok');
+      nenhumEl.className = 'nenhum visivel';
+      btnLimpar.className = 'btn-limpar visivel';
+      return;
+    }
+
+    mostrarStatus(`✅ ZIP lido! Encontrei ${arquivosEncontrados.length} arquivo(s) relacionado(s) a banco de dados`, 'ok');
+    contadorEl.textContent = `📋 ${arquivosEncontrados.length} arquivo(s) encontrado(s)`;
+    contadorEl.className = 'contador visivel';
+    btnLimpar.className = 'btn-limpar visivel';
+
+    // Lê e mostra cada arquivo
+    for (const { caminho, arquivo } of arquivosEncontrados) {
+      try {
+        const conteudo = await arquivo.async('string');
+        criarBloco(caminho, conteudo);
+      } catch (e) {
+        criarBloco(caminho, '⚠️ Não foi possível ler este arquivo (pode ser binário)');
+      }
+    }
+
+  } catch (err) {
+    mostrarStatus('❌ Erro ao ler o ZIP: ' + err.message, 'erro');
+  }
+}
+
+function criarBloco(caminho, conteudo) {
+  const div = document.createElement('div');
+  div.className = 'resultado visivel';
+
+  const btnId = 'btn_' + Math.random().toString(36).substr(2, 9);
+
+  div.innerHTML = `
+    <div class="arquivo-titulo">
+      <h3>📄 ${caminho}</h3>
+      <button class="btn-copiar" id="${btnId}" onclick="copiar('${btnId}', \`${escapar(conteudo)}\`)">
+        📋 Copiar tudo
+      </button>
+    </div>
+    <pre>${escaparHTML(conteudo)}</pre>
+  `;
+
+  resultadosEl.appendChild(div);
+}
+
+function copiar(btnId, conteudo) {
+  navigator.clipboard.writeText(conteudo).then(() => {
+    const btn = document.getElementById(btnId);
+    btn.textContent = '✅ Copiado!';
+    btn.classList.add('copiado');
+    setTimeout(() => {
+      btn.textContent = '📋 Copiar tudo';
+      btn.classList.remove('copiado');
+    }, 2000);
+  }).catch(() => {
+    alert('Não foi possível copiar automaticamente. Selecione o texto manualmente.');
+  });
+}
+
+function escapar(str) {
+  return str.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
+}
+
+function escaparHTML(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function mostrarStatus(msg, tipo) {
+  statusEl.textContent = msg;
+  statusEl.className = `status visivel ${tipo}`;
+}
+</script>
+<script>// JavaScript extra
+console.log("Playground pronto!");</script></body>
+</html>

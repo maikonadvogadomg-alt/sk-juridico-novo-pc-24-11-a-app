@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API Monica — Guia Visual</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #0f0f1a; color: #e0e0e0; padding: 16px; }
+  h1 { text-align: center; color: #a78bfa; font-size: 1.4em; margin-bottom: 6px; }
+  .sub { text-align: center; color: #888; font-size: 0.85em; margin-bottom: 20px; }
+
+  /* DIFERENÇA PLANO x API */
+  .diff-box { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+  .diff-card { flex: 1; min-width: 140px; border-radius: 12px; padding: 14px; text-align: center; }
+  .diff-card.plano { background: #1e1b4b; border: 2px solid #6366f1; }
+  .diff-card.api   { background: #1a2e1a; border: 2px solid #22c55e; }
+  .diff-card .icon { font-size: 2em; margin-bottom: 6px; }
+  .diff-card h3 { font-size: 1em; margin-bottom: 8px; }
+  .diff-card p { font-size: 0.78em; color: #aaa; line-height: 1.5; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.75em; margin-top: 8px; font-weight: bold; }
+  .badge.roxo { background: #6366f1; color: white; }
+  .badge.verde { background: #22c55e; color: #000; }
+
+  /* SEÇÃO */
+  .section-title { font-size: 1em; color: #a78bfa; border-left: 4px solid #a78bfa; padding-left: 10px; margin: 20px 0 12px; }
+
+  /* CARDS DE MODELO */
+  .models-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-bottom: 24px; }
+  .model-card { background: #1a1a2e; border-radius: 10px; padding: 12px; border: 1px solid #333; cursor: pointer; transition: border 0.2s; }
+  .model-card:hover { border-color: #a78bfa; }
+  .model-card.selected { border-color: #22c55e; background: #0d2010; }
+  .model-name { font-size: 0.85em; font-weight: bold; color: #e0e0e0; margin-bottom: 4px; }
+  .model-maker { font-size: 0.72em; color: #888; margin-bottom: 8px; }
+  .price-row { display: flex; justify-content: space-between; font-size: 0.72em; }
+  .price-in  { color: #60a5fa; }
+  .price-out { color: #f97316; }
+  .tier-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.68em; margin-bottom: 6px; }
+  .tier-economico { background: #14532d; color: #86efac; }
+  .tier-equilibrado { background: #1e3a5f; color: #93c5fd; }
+  .tier-poderoso { background: #4c1d95; color: #c4b5fd; }
+  .tier-premium { background: #7f1d1d; color: #fca5a5; }
+
+  /* CALCULADORA */
+  .calc-box { background: #1a1a2e; border-radius: 12px; padding: 16px; border: 1px solid #333; margin-bottom: 24px; }
+  .calc-box h3 { color: #a78bfa; font-size: 0.95em; margin-bottom: 12px; }
+  .calc-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .calc-row label { font-size: 0.8em; color: #aaa; min-width: 120px; }
+  .calc-row input, .calc-row select { background: #0f0f1a; border: 1px solid #444; color: #e0e0e0; padding: 6px 10px; border-radius: 8px; font-size: 0.85em; flex: 1; min-width: 120px; }
+  .calc-result { background: #0d2010; border-radius: 8px; padding: 12px; margin-top: 10px; }
+  .calc-result .valor { font-size: 1.5em; color: #22c55e; font-weight: bold; }
+  .calc-result .detalhe { font-size: 0.75em; color: #888; margin-top: 4px; }
+  .btn-calc { background: #6366f1; color: white; border: none; padding: 8px 20px; border-radius: 8px; cursor: pointer; font-size: 0.85em; }
+  .btn-calc:hover { background: #4f46e5; }
+
+  /* COMPARATIVO */
+  .compare-table { width: 100%; border-collapse: collapse; font-size: 0.78em; margin-bottom: 24px; }
+  .compare-table th { background: #1e1b4b; color: #a78bfa; padding: 8px; text-align: left; }
+  .compare-table td { padding: 8px; border-bottom: 1px solid #222; }
+  .compare-table tr:hover td { background: #1a1a2e; }
+  .ok { color: #22c55e; }
+  .no { color: #ef4444; }
+  .maybe { color: #f59e0b; }
+
+  /* COMO USAR */
+  .steps { counter-reset: step; }
+  .step { display: flex; gap: 12px; margin-bottom: 14px; align-items: flex-start; }
+  .step-num { background: #6366f1; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 0.85em; font-weight: bold; flex-shrink: 0; margin-top: 2px; }
+  .step-text h4 { font-size: 0.9em; color: #e0e0e0; margin-bottom: 3px; }
+  .step-text p { font-size: 0.78em; color: #888; line-height: 1.5; }
+  .step-text a { color: #60a5fa; }
+
+  /* AVISO */
+  .aviso { background: #2d1b00; border: 1px solid #f59e0b; border-radius: 10px; padding: 12px; font-size: 0.8em; color: #fcd34d; margin-bottom: 20px; }
+  .aviso strong { color: #fbbf24; }
+
+  /* FILTRO */
+  .filtros { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .filtro-btn { background: #1a1a2e; border: 1px solid #444; color: #aaa; padding: 5px 14px; border-radius: 20px; cursor: pointer; font-size: 0.78em; }
+  .filtro-btn.ativo { background: #6366f1; border-color: #6366f1; color: white; }
+
+  .saldo-dica { background: #1e1b4b; border-radius: 10px; padding: 12px; font-size: 0.8em; color: #c4b5fd; margin-bottom: 20px; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<h1>🤖 API Monica — Guia Visual</h1>
+<p class="sub">Entenda tudo antes de decidir</p>
+
+<!-- DIFERENÇA -->
+<div class="diff-box">
+  <div class="diff-card plano">
+    <div class="icon">💬</div>
+    <h3>Plano Monica<br>(o que você paga)</h3>
+    <p>Você usa a Monica diretamente no app, extensão ou Android. É como uma assinatura de streaming.</p>
+    <span class="badge roxo">Mensalidade fixa</span>
+  </div>
+  <div class="diff-card api">
+    <div class="icon">🔌</div>
+    <h3>API Monica<br>(platform.monica.im)</h3>
+    <p>Você coloca a chave nos seus apps (Meu Chat, etc.) e eles chamam a IA. Você paga só o que usar.</p>
+    <span class="badge verde">Pré-pago por uso</span>
+  </div>
+</div>
+
+<div class="aviso">
+  ⚠️ <strong>Importante:</strong> O plano mensal que você paga <strong>NÃO</strong> inclui a API. São contas separadas. Para usar a API, você precisa adicionar saldo em <strong>platform.monica.im</strong> com cartão.
+</div>
+
+<!-- MODELOS -->
+<div class="section-title">📦 Modelos disponíveis — clique para selecionar</div>
+
+<div class="filtros">
+  <button class="filtro-btn ativo" onclick="filtrar('todos', this)">Todos</button>
+  <button class="filtro-btn" onclick="filtrar('economico', this)">💚 Econômico</button>
+  <button class="filtro-btn" onclick="filtrar('equilibrado', this)">💙 Equilibrado</button>
+  <button class="filtro-btn" onclick="filtrar('poderoso', this)">💜 Poderoso</button>
+  <button class="filtro-btn" onclick="filtrar('premium', this)">❤️ Premium</button>
+</div>
+
+<div class="models-grid" id="modelsGrid"></div>
+
+<!-- CALCULADORA -->
+<div class="calc-box">
+  <h3>🧮 Calculadora — quanto vai custar?</h3>
+  <div class="calc-row">
+    <label>Modelo selecionado:</label>
+    <select id="calcModelo"></select>
+  </div>
+  <div class="calc-row">
+    <label>Conversas por dia:</label>
+    <input type="number" id="calcConversas" value="10" min="1">
+  </div>
+  <div class="calc-row">
+    <label>Tamanho médio:</label>
+    <select id="calcTamanho">
+      <option value="500">Curta (~500 tokens)</option>
+      <option value="2000" selected>Média (~2.000 tokens)</option>
+      <option value="5000">Longa (~5.000 tokens)</option>
+      <option value="15000">Muito longa (~15.000 tokens)</option>
+    </select>
+  </div>
+  <button class="btn-calc" onclick="calcular()">Calcular custo</button>
+  <div class="calc-result" id="calcResult" style="display:none">
+    <div class="valor" id="calcValorDia"></div>
+    <div class="detalhe" id="calcDetalhe"></div>
+  </div>
+</div>
+
+<!-- COMPARATIVO -->
+<div class="section-title">⚖️ Comparativo rápido — qual usar?</div>
+<table class="compare-table">
+  <thead>
+    <tr>
+      <th>Situação</th>
+      <th>Melhor modelo</th>
+      <th>Por quê</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Conversa rápida, perguntas simples</td>
+      <td><span class="ok">Gemini 2.5 Flash-Lite</span></td>
+      <td>Mais barato de todos</td>
+    </tr>
+    <tr>
+      <td>Análise de código, projetos</td>
+      <td><span class="ok">Claude Haiku 3.5</span></td>
+      <td>Barato e muito bom em código</td>
+    </tr>
+    <tr>
+      <td>Documentos jurídicos longos</td>
+      <td><span class="maybe">Claude Sonnet 4.6</span></td>
+      <td>Equilibrado, contexto grande</td>
+    </tr>
+    <tr>
+      <td>Análise complexa, raciocínio</td>
+      <td><span class="maybe">Gemini 2.5 Pro</span></td>
+      <td>Poderoso e mais barato que Claude Opus</td>
+    </tr>
+    <tr>
+      <td>Máxima qualidade, sem limite</td>
+      <td><span class="no">Claude Opus 4.6</span></td>
+      <td>O melhor, mas caro</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- SALDO DICA -->
+<div class="saldo-dica">
+  💡 <strong>Dica de saldo inicial:</strong> Para testar sem gastar muito, comece com <strong>$5 dólares</strong>. Com o Gemini Flash-Lite ou Claude Haiku, isso dá centenas de conversas. Com o Claude Sonnet, dá umas 50 a 100 conversas médias.
+</div>
+
+<!-- COMO USAR -->
+<div class="section-title">🚀 Como ativar — passo a passo</div>
+<div class="steps">
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-text">
+      <h4>Acesse a plataforma</h4>
+      <p>Abra <a href="https://platform.monica.im" target="_blank">platform.monica.im</a> e entre com o mesmo login da Monica.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-text">
+      <h4>Adicione saldo</h4>
+      <p>Vá em "Billing" → adicione cartão → coloque o valor que quiser (mínimo geralmente $5).</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-text">
+      <h4>Gere sua chave</h4>
+      <p>Vá em "API Keys" → clique em "Create new key" → copie a chave gerada. <strong>Guarde em lugar seguro!</strong></p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-text">
+      <h4>Configure no seu app</h4>
+      <p>No Meu Chat ou outro app, coloque:<br>
+      • URL base: <strong>https://openapi.monica.im/v1</strong><br>
+      • Chave: a que você gerou<br>
+      • Modelo: escolha da lista acima</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const modelos = [
+  { nome: "GPT-4.1 Nano",        maker: "OpenAI",     in: 0.10,  out: 0.40,  tier: "economico"   },
+  { nome: "Gemini 2.5 Flash-Lite",maker: "Google",    in: 0.10,  out: 0.40,  tier: "economico"   },
+  { nome: "GPT-4o Mini",         maker: "OpenAI",     in: 0.15,  out: 0.60,  tier: "economico"   },
+  { nome: "Claude Haiku 3",      maker: "Anthropic",  in: 0.25,  out: 1.25,  tier: "economico"   },
+  { nome: "Gemini 2.5 Flash",    maker: "Google",     in: 0.30,  out: 2.50,  tier: "economico"   },
+  { nome: "GPT-4.1 Mini",        maker: "OpenAI",     in: 0.40,  out: 1.60,  tier: "economico"   },
+  { nome: "Gemini 3 Flash",      maker: "Google",     in: 0.50,  out: 3.00,  tier: "economico"   },
+  { nome: "o4-mini",             maker: "OpenAI",     in: 0.55,  out: 2.20,  tier: "equilibrado" },
+  { nome: "Claude Haiku 3.5",    maker: "Anthropic",  in: 0.80,  out: 4.00,  tier: "equilibrado" },
+  { nome: "Claude Haiku 4.5",    maker: "Anthropic",  in: 1.00,  out: 5.00,  tier: "equilibrado" },
+  { nome: "Gemini 2.5 Pro",      maker: "Google",     in: 1.25,  out: 10.00, tier: "equilibrado" },
+  { nome: "GPT-5",               maker: "OpenAI",     in: 1.25,  out: 10.00, tier: "equilibrado" },
+  { nome: "GPT-5.3 Codex",       maker: "OpenAI",     in: 1.75,  out: 14.00, tier: "poderoso"    },
+  { nome: "GPT-4.1",             maker: "OpenAI",     in: 2.00,  out: 8.00,  tier: "poderoso"    },
+  { nome: "o3",                  maker: "OpenAI",     in: 2.00,  out: 8.00,  tier: "poderoso"    },
+  { nome: "GPT-4o",              maker: "OpenAI",     in: 2.50,  out: 10.00, tier: "poderoso"    },
+  { nome: "Claude Sonnet 3.5",   maker: "Anthropic",  in: 3.00,  out: 15.00, tier: "poderoso"    },
+  { nome: "Claude Sonnet 4",     maker: "Anthropic",  in: 3.00,  out: 15.00, tier: "poderoso"    },
+  { nome: "Claude Sonnet 4.6",   maker: "Anthropic",  in: 3.00,  out: 15.00, tier: "poderoso"    },
+  { nome: "Claude Opus 4.6",     maker: "Anthropic",  in: 5.00,  out: 25.00, tier: "premium"     },
+  { nome: "Claude Opus 3",       maker: "Anthropic",  in: 15.00, out: 75.00, tier: "premium"     },
+  { nome: "Claude Opus 4",       maker: "Anthropic",  in: 15.00, out: 75.00, tier: "premium"     },
+];
+
+const tierLabel = {
+  economico:   { label: "💚 Econômico",   css: "tier-economico"   },
+  equilibrado: { label: "💙 Equilibrado", css: "tier-equilibrado" },
+  poderoso:    { label: "💜 Poderoso",    css: "tier-poderoso"    },
+  premium:     { label: "❤️ Premium",     css: "tier-premium"     },
+};
+
+let filtroAtual = "todos";
+let modeloSelecionado = modelos[0];
+
+function renderModelos() {
+  const grid = document.getElementById("modelsGrid");
+  grid.innerHTML = "";
+  const lista = filtroAtual === "todos" ? modelos : modelos.filter(m => m.tier === filtroAtual);
+  lista.forEach((m, i) => {
+    const card = document.createElement("div");
+    card.className = "model-card" + (m === modeloSelecionado ? " selected" : "");
+    card.innerHTML = `
+      <div class="model-name">${m.nome}</div>
+      <div class="model-maker">${m.maker}</div>
+      <span class="tier-badge ${tierLabel[m.tier].css}">${tierLabel[m.tier].label}</span>
+      <div class="price-row">
+        <span class="price-in">↓ $${m.in}/M</span>
+        <span class="price-out">↑ $${m.out}/M</span>
+      </div>`;
+    card.onclick = () => selecionarModelo(m);
+    grid.appendChild(card);
+  });
+  atualizarSelectCalc();
+}
+
+function selecionarModelo(m) {
+  modeloSelecionado = m;
+  document.getElementById("calcModelo").value = m.nome;
+  renderModelos();
+}
+
+function filtrar(tier, btn) {
+  filtroAtual = tier;
+  document.querySelectorAll(".filtro-btn").forEach(b => b.classList.remove("ativo"));
+  btn.classList.add("ativo");
+  renderModelos();
+}
+
+function atualizarSelectCalc() {
+  const sel = document.getElementById("calcModelo");
+  sel.innerHTML = "";
+  modelos.forEach(m => {
+    const opt = document.createElement("option");
+    opt.value = m.nome;
+    opt.textContent = m.nome + " ($" + m.in + "/$" + m.out + ")";
+    if (m === modeloSelecionado) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function calcular() {
+  const nomeModelo = document.getElementById("calcModelo").value;
+  const m = modelos.find(x => x.nome === nomeModelo);
+  const conversas = parseInt(document.getElementById("calcConversas").value) || 10;
+  const tokens = parseInt(document.getElementById("calcTamanho").value);
+
+  // Estimativa: 40% entrada, 60% saída
+  const tokensIn  = tokens * 0.4;
+  const tokensOut = tokens * 0.6;
+
+  const custoPorConversa = (tokensIn * m.in / 1_000_000) + (tokensOut * m.out / 1_000_000);
+  const custoDia   = custoPorConversa * conversas;
+  const custoMes   = custoDia * 30;
+  const custoAno   = custoDia * 365;
+
+  const fmt = v => v < 0.01 ? "< $0,01" : "$" + v.toFixed(3).replace(".", ",");
+  const fmtBRL = v => "R$ " + (v * 5.8).toFixed(2).replace(".", ",");
+
+  document.getElementById("calcValorDia").textContent = fmt(custoDia) + " / dia";
+  document.getElementById("calcDetalhe").innerHTML =
+    `Por mês: <strong>${fmt(custoMes)}</strong> (≈ ${fmtBRL(custoMes)})<br>` +
+    `Por ano: <strong>${fmt(custoAno)}</strong> (≈ ${fmtBRL(custoAno)})<br>` +
+    `Por conversa: ${fmt(custoPorConversa)} · Modelo: ${m.nome}`;
+
+  document.getElementById("calcResult").style.display = "block";
+}
+
+renderModelos();
+</script>
+</body>
+</html>

@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><style>/* 23/11: sem esticar */html,body,*{overscroll-behavior:none}</style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Transcrever Áudio</title>
+<style>
+/* 🎙 Transcrever áudio (18/11) — áudios do WhatsApp viram texto LITERAL, para usar como prova.
+   Guarda junto: nome, tamanho, duração, data e a "impressão digital" (SHA-256) do arquivo original. */
+:root { --bg:#eef0f3; --papel:#fff; --fg:#1d2330; --mut:#5b6475; --linha:#d6dbe3; --tinta:#1d2a3a; --acc:#2c4466; --bom:#2f7a55; --bom-bg:#e3f2ea; --ruim:#b3362b; --ruim-bg:#fbe7e4; --amarelo:#7a5a00; --amarelo-bg:#fdf3d8; }
+@media (prefers-color-scheme: dark) { :root { --bg:#12161d; --papel:#1b212b; --fg:#e6eaf0; --mut:#a3adbd; --linha:#2e3746; --tinta:#dbe4f0; --acc:#9fbbe0; --bom:#5cc794; --bom-bg:#173326; --ruim:#ff8a7d; --ruim-bg:#3a1d1a; --amarelo:#e8c56a; --amarelo-bg:#33290f; color-scheme: dark; } }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width:860px; margin:0 auto; padding:16px max(16px, env(safe-area-inset-right)) 60px max(16px, env(safe-area-inset-left)); display:flex; flex-direction:column; gap:14px; }
+h1 { margin:0; font-size:24px; color:var(--tinta); }
+.caixa { background:var(--papel); border:1px solid var(--linha); border-radius:12px; padding:14px; display:flex; flex-direction:column; gap:10px; }
+.mut { color:var(--mut); } .peq { font-size:14px; }
+.linha { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+button, .bt { font:inherit; min-height:44px; padding:0 16px; border-radius:10px; border:1px solid var(--linha); background:var(--papel); color:var(--fg); cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+.p { background:var(--acc); border-color:var(--acc); color:#fff; font-weight:600; }
+@media (prefers-color-scheme: dark) { .p { color:#0d1520; } }
+button:disabled { opacity:.55; cursor:default; }
+input[type=text], input[type=password], select, textarea { font:inherit; width:100%; padding:10px; border:1px solid var(--linha); border-radius:10px; background:var(--bg); color:var(--fg); }
+textarea { min-height:180px; resize:vertical; font-size:15px; line-height:1.6; }
+.audio { border:1px solid var(--linha); border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:8px; background:var(--papel); }
+.audio h3 { margin:0; font-size:16px; word-break:break-all; }
+.ficha { font-size:13px; color:var(--mut); display:grid; grid-template-columns:auto 1fr; gap:2px 10px; }
+.ficha b { color:var(--fg); font-weight:600; } .ficha code { word-break:break-all; font-size:12px; }
+audio { width:100%; }
+.st { padding:8px 10px; border-radius:8px; font-size:14px; }
+.st.ok { background:var(--bom-bg); color:var(--bom); } .st.er { background:var(--ruim-bg); color:var(--ruim); } .st.av { background:var(--amarelo-bg); color:var(--amarelo); }
+label.chk { display:flex; gap:8px; align-items:center; font-size:15px; } label.chk input { width:20px; height:20px; }
+details summary { cursor:pointer; font-weight:600; }
+</style>
+</head>
+<body>
+<main>
+  <h1>🎙 Transcrever Áudio</h1>
+  <p class="mut">Áudios do WhatsApp (e outros) viram <b>texto literal</b>, palavra por palavra, com o tempo de cada trecho. Junto vai a ficha do arquivo original (nome, tamanho, duração, data e a <b>impressão digital SHA-256</b>), para mostrar que o áudio não foi mudado.</p>
+
+  <section class="caixa">
+    <b>1. Escolha os áudios</b>
+    <p class="peq mut">No WhatsApp: abra a conversa → segure o áudio → ⋮ → <b>Compartilhar</b> → salvar em "Arquivos" (ou: ⋮ da conversa → Mais → <b>Exportar conversa</b> → com mídia). Os áudios têm o final <code>.opus</code>.</p>
+    <label class="bt p">📂 Escolher áudios<input type="file" id="arqs" accept="audio/*,.opus,.ogg,.oga,.m4a,.mp3,.wav,.aac,.amr,.webm" multiple hidden></label>
+  </section>
+
+  <section class="caixa">
+    <b>2. Quem vai transcrever</b>
+    <select id="motor">
+      <option value="groq">⚡ Groq Whisper (recomendado: grátis, muito fiel, literal)</option>
+      <option value="gemini">✨ Gemini (grátis; tenta separar quem fala)</option>
+    </select>
+    <div id="chave-box"></div>
+    <label class="chk"><input type="checkbox" id="falantes"> Tentar separar quem fala ("Falante 1", "Falante 2") — só no Gemini</label>
+    <p class="peq mut">A chave fica só neste aparelho. Groq grátis: <b>console.groq.com</b> → API Keys (começa com <code>gsk_</code>).</p>
+  </section>
+
+  <section class="caixa">
+    <div class="linha"><b style="flex:1">3. Os áudios</b><button class="p" id="tudo" disabled>🎙 Transcrever todos</button></div>
+    <div id="lista"><p class="mut peq">Nenhum áudio escolhido ainda.</p></div>
+  </section>
+
+  <section class="caixa" id="final" hidden>
+    <b>4. O documento</b>
+    <p class="peq mut">Confira ouvindo cada áudio e corrija no texto se precisar (a IA pode errar nome, número ou palavra difícil). Depois:</p>
+    <div class="linha"><button class="p" id="word">⬇ Baixar em Word</button><button id="copiar">📋 Copiar tudo</button><button id="txt">⬇ .txt</button></div>
+    <details><summary>⚖️ Cuidados para usar como prova</summary>
+      <ul class="peq">
+        <li><b>Guarde o áudio original</b> sem mexer. A impressão digital (SHA-256) na ficha permite provar que é o mesmo arquivo: se mudar um único segundo, ela muda toda.</li>
+        <li>A transcrição é <b>automática</b> e tem que ser <b>conferida</b> ouvindo. O documento diz isso.</li>
+        <li>Se a outra parte contestar, os caminhos usuais são juntar o próprio áudio, a ata notarial ou a perícia. A transcrição ajuda o juiz a ler; não substitui o arquivo.</li>
+      </ul>
+    </details>
+  </section>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  const $ = (s) => document.querySelector(s);
+  const E = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const itens = [];
+  // chaves: as do SK Jurídico (⚙️ Config), se esta tela estiver dentro dele; senão, as que você colar aqui (ficam neste aparelho)
+  function chavesDoApp() { try { const P = window.parent; if (P && P !== window && P.J && P.J.pref) { const c = P.J.pref.get('ia', {}) || {}; return { groq: c.groqChave || '', gemini: c.chave || '' }; } } catch (e) {} return { groq: '', gemini: '' }; }
+  const lerLocal = (k) => { try { return localStorage.getItem('transcrever:' + k) || ''; } catch (e) { return ''; } };
+  const gravarLocal = (k, v) => { try { localStorage.setItem('transcrever:' + k, v); } catch (e) {} };
+  const chave = (m) => chavesDoApp()[m] || lerLocal(m);
+  function pintarChave() {
+    const m = $('#motor').value, tem = chavesDoApp()[m];
+    $('#chave-box').innerHTML = tem ? '<p class="st ok">✅ Usando a chave ' + (m === 'groq' ? 'da Groq' : 'do Gemini') + ' que está em ⚙️ Config do SK Jurídico.</p>'
+      : '<input type="password" id="chave" autocomplete="off" placeholder="Cole a chave ' + (m === 'groq' ? 'da Groq (gsk_…)' : 'do Gemini (AIza…)') + '" value="' + E(lerLocal(m)) + '">';
+    const i = $('#chave'); if (i) i.onchange = () => gravarLocal(m, i.value.trim());
+    $('#falantes').disabled = m !== 'gemini';
+  }
+  $('#motor').onchange = () => { gravarLocal('motor', $('#motor').value); pintarChave(); };
+  $('#motor').value = lerLocal('motor') || 'groq'; pintarChave();
+
+  const tamanho = (n) => n > 1048576 ? (n / 1048576).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' MB' : Math.round(n / 1024) + ' KB';
+  const relogio = (s) => { s = Math.max(0, Math.round(s || 0)); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return (h ? h + ':' + String(m).padStart(2, '0') : String(m).padStart(2, '0')) + ':' + String(x).padStart(2, '0'); };
+  async function sha256(buf) { const d = await crypto.subtle.digest('SHA-256', buf); return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, '0')).join(''); }
+  function duracao(url) { return new Promise((ok) => { const a = new Audio(); a.preload = 'metadata'; a.onloadedmetadata = () => { if (a.duration === Infinity) { a.currentTime = 1e7; a.ontimeupdate = () => { a.ontimeupdate = null; ok(a.duration); }; } else ok(a.duration); }; a.onerror = () => ok(NaN); a.src = url; }); }
+  const tipoDe = (f) => f.type || (/\.(opus|ogg|oga)$/i.test(f.name) ? 'audio/ogg' : /\.m4a$/i.test(f.name) ? 'audio/mp4' : /\.mp3$/i.test(f.name) ? 'audio/mpeg' : /\.wav$/i.test(f.name) ? 'audio/wav' : /\.aac$/i.test(f.name) ? 'audio/aac' : /\.amr$/i.test(f.name) ? 'audio/amr' : 'audio/ogg');
+
+  $('#arqs').onchange = async (e) => {
+    for (const f of e.target.files) {
+      const buf = await f.arrayBuffer(), url = URL.createObjectURL(f);
+      const it = { f, url, nome: f.name, tam: f.size, data: f.lastModified ? new Date(f.lastModified) : null, hash: await sha256(buf), dur: await duracao(url), texto: '', motor: '', st: '' };
+      itens.push(it);
+    }
+    e.target.value = ''; pintar();
+  };
+  function pintar() {
+    $('#tudo').disabled = !itens.length;
+    $('#lista').innerHTML = itens.length ? itens.map((it, i) => '<div class="audio" data-i="' + i + '"><h3>' + (i + 1) + '. ' + E(it.nome) + '</h3>' +
+      '<div class="ficha"><span>Tamanho</span><b>' + tamanho(it.tam) + '</b><span>Duração</span><b>' + (isNaN(it.dur) ? '—' : relogio(it.dur)) + '</b><span>Data do arquivo</span><b>' + (it.data ? it.data.toLocaleString('pt-BR') : '—') + '</b><span>SHA-256</span><code>' + it.hash + '</code></div>' +
+      '<audio controls preload="none" src="' + it.url + '"></audio>' +
+      (it.st ? '<p class="st ' + (/^✅/.test(it.st) ? 'ok' : /^⏳/.test(it.st) ? 'av' : 'er') + '">' + E(it.st) + '</p>' : '') +
+      '<textarea data-t="' + i + '" placeholder="A transcrição aparece aqui. Você pode corrigir.">' + E(it.texto) + '</textarea>' +
+      '<div class="linha"><button data-a="um" data-i="' + i + '">🎙 Transcrever este</button><button data-a="tirar" data-i="' + i + '">✕ Tirar da lista</button></div></div>').join('') : '<p class="mut peq">Nenhum áudio escolhido ainda.</p>';
+    $('#final').hidden = !itens.some((x) => x.texto);
+  }
+  $('#lista').addEventListener('input', (e) => { const i = e.target.dataset.t; if (i != null) { itens[+i].texto = e.target.value; $('#final').hidden = !itens.some((x) => x.texto); } });
+  $('#lista').addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-a]'); if (!b) return; const i = +b.dataset.i;
+    if (b.dataset.a === 'tirar') { if (confirm('Tirar "' + itens[i].nome + '" da lista? (o arquivo no seu celular não é apagado)')) { itens.splice(i, 1); pintar(); } }
+    if (b.dataset.a === 'um') transcrever(itens[i]);
+  });
+  $('#tudo').onclick = async () => { $('#tudo').disabled = true; for (const it of itens) if (!it.texto) await transcrever(it); $('#tudo').disabled = false; };
+
+  const INSTRUCAO = 'Transcrição LITERAL em português do Brasil, exatamente como foi falado: mantenha gírias, erros de fala, repetições, "né", "tipo", "ahn". Não corrija, não resuma, não invente. Trecho que não dá para entender: [inaudível]. Barulho: [risos], [choro], [barulho].';
+  async function transcrever(it) {
+    const m = $('#motor').value, k = chave(m);
+    if (!k) { it.st = '⚠ Falta a chave ' + (m === 'groq' ? 'da Groq' : 'do Gemini') + ' (no passo 2).'; pintar(); return; }
+    it.st = '⏳ Transcrevendo…'; pintar();
+    try {
+      it.texto = m === 'groq' ? await groq(it, k) : await gemini(it, k);
+      it.motor = m === 'groq' ? 'Whisper large-v3 (Groq)' : 'Gemini (Google)';
+      it.quando = new Date(); it.st = '✅ Pronto. Confira ouvindo e corrija se precisar.';
+    } catch (er) { it.st = '⚠ ' + er.message; }
+    pintar();
+  }
+  async function groq(it, k) {
+    if (it.tam > 25 * 1048576) throw new Error('Arquivo maior que 25 MB: a Groq grátis não aceita. Use o Gemini ou divida o áudio.');
+    const fd = new FormData();
+    let nome = it.nome; if (/\.opus$/i.test(nome)) nome = nome.replace(/\.opus$/i, '.ogg'); // a Groq entende .ogg (é o mesmo formato do .opus do WhatsApp)
+    fd.append('file', new File([it.f], nome, { type: tipoDe(it.f) })); fd.append('model', 'whisper-large-v3'); fd.append('language', 'pt');
+    fd.append('response_format', 'verbose_json'); fd.append('temperature', '0'); fd.append('prompt', 'Conversa de WhatsApp em português do Brasil, transcrita literalmente, com gírias e hesitações.');
+    const r = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', { method: 'POST', headers: { Authorization: 'Bearer ' + k }, body: fd });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(r.status === 401 ? 'A chave da Groq não serve (confira).' : r.status === 429 ? 'Groq no limite agora: espere 1 minuto ou use o Gemini.' : r.status === 413 ? 'Arquivo grande demais para a Groq.' : ((j.error && j.error.message) || 'Groq respondeu ' + r.status));
+    const seg = (j.segments || []).filter((s) => String(s.text || '').trim());
+    return seg.length ? seg.map((s) => '[' + relogio(s.start) + '] ' + s.text.trim()).join('\n') : String(j.text || '').trim();
+  }
+  async function gemini(it, k) {
+    if (it.tam > 19 * 1048576) throw new Error('Arquivo maior que 19 MB: grande demais para mandar de uma vez.');
+    const b64 = await new Promise((ok, er) => { const fr = new FileReader(); fr.onload = () => ok(String(fr.result).split(',')[1]); fr.onerror = () => er(new Error('não consegui ler o áudio')); fr.readAsDataURL(it.f); });
+    const pedido = INSTRUCAO + ' Coloque o tempo no começo de cada trecho, assim: [00:12]. ' + ($('#falantes').checked ? 'Quando der para perceber vozes diferentes, comece a fala com "Falante 1:", "Falante 2:" (não invente nomes). ' : '') + 'Responda SOMENTE com a transcrição.';
+    let ult = null;
+    for (const modelo of ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest']) {
+      const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + modelo + ':generateContent?key=' + encodeURIComponent(k), { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ role: 'user', parts: [{ inline_data: { mime_type: tipoDe(it.f), data: b64 } }, { text: pedido }] }], generationConfig: { temperature: 0, maxOutputTokens: 16000 } }) });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok) { const t = (((j.candidates || [])[0] || {}).content || {}).parts; const x = (t || []).map((p) => p.text || '').join('').trim(); if (x) return x; ult = 'o Gemini não devolveu texto'; continue; }
+      ult = r.status === 429 ? 'Gemini no limite agora (cota grátis). Espere ou use a Groq.' : r.status === 400 && /API key/i.test(JSON.stringify(j)) ? 'A chave do Gemini não serve (confira).' : ((j.error && j.error.message) || 'Gemini respondeu ' + r.status);
+      if (r.status === 429 || r.status === 400) break;
+    }
+    throw new Error(ult || 'não consegui transcrever');
+  }
+
+  // ── documento ──
+  function texto() {
+    return 'TRANSCRIÇÃO DE ÁUDIOS\n\n' + itens.filter((x) => x.texto).map((it, i) =>
+      'ÁUDIO ' + (i + 1) + ' — ' + it.nome + '\nTamanho: ' + tamanho(it.tam) + ' · Duração: ' + (isNaN(it.dur) ? '—' : relogio(it.dur)) + ' · Data do arquivo: ' + (it.data ? it.data.toLocaleString('pt-BR') : '—') +
+      '\nSHA-256 do arquivo original: ' + it.hash + '\nTranscrição automática por ' + it.motor + ' em ' + (it.quando ? it.quando.toLocaleString('pt-BR') : '—') + '\n\n' + it.texto).join('\n\n— — —\n\n') +
+      '\n\nObservação: transcrição feita por programa de reconhecimento de fala e conferida pelo signatário ouvindo os áudios. Os arquivos originais estão preservados; a impressão digital SHA-256 de cada um permite verificar que não foram alterados.\n';
+  }
+  $('#copiar').onclick = async () => { try { await navigator.clipboard.writeText(texto()); $('#copiar').textContent = '✅ Copiado'; } catch (e) { prompt('Copie:', texto()); } };
+  function baixar(nome, conteudo, tipo) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([conteudo], { type: tipo })); a.download = nome; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); }
+  $('#txt').onclick = () => baixar('Transcricao-audios.txt', texto(), 'text/plain;charset=utf-8');
+  $('#word').onclick = () => {
+    const blocos = itens.filter((x) => x.texto).map((it, i) => '<h2 style="font-size:13pt;margin:18pt 0 4pt">ÁUDIO ' + (i + 1) + ' — ' + E(it.nome) + '</h2>' +
+      '<table style="border-collapse:collapse;font-size:10pt;margin-bottom:8pt" border="1" cellpadding="4"><tr><td><b>Tamanho</b></td><td>' + tamanho(it.tam) + '</td><td><b>Duração</b></td><td>' + (isNaN(it.dur) ? '—' : relogio(it.dur)) + '</td></tr>' +
+      '<tr><td><b>Data do arquivo</b></td><td colspan="3">' + (it.data ? it.data.toLocaleString('pt-BR') : '—') + '</td></tr><tr><td><b>SHA-256</b></td><td colspan="3" style="font-family:Consolas,monospace;font-size:8pt">' + it.hash + '</td></tr>' +
+      '<tr><td><b>Transcrição</b></td><td colspan="3">Automática — ' + E(it.motor) + ' — ' + (it.quando ? it.quando.toLocaleString('pt-BR') : '—') + '</td></tr></table>' +
+      it.texto.split('\n').map((l) => '<p style="margin:0 0 4pt;text-align:justify">' + E(l) + '</p>').join('')).join('');
+    const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>Transcrição</title></head><body style="font-family:Arial;font-size:12pt;line-height:1.5">' +
+      '<h1 style="font-size:14pt;text-align:center">TRANSCRIÇÃO DE ÁUDIOS</h1>' + blocos +
+      '<p style="margin-top:18pt;font-size:10pt"><i>Observação: transcrição feita por programa de reconhecimento de fala e conferida pelo signatário ouvindo os áudios. Os arquivos originais estão preservados; a impressão digital SHA-256 de cada um permite verificar que não foram alterados.</i></p></body></html>';
+    baixar('Transcricao-audios.doc', '﻿' + html, 'application/msword');
+  };
+})();
+</script>
+</body>
+</html>

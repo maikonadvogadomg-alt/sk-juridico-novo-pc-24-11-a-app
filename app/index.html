@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SK Jurídico Novo</title>
+<link rel="stylesheet" href="css/app.css">
+  <!-- PWA:inicio (gerado pelo Mini SK — pode refazer no painel 📱 PWA) -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#00ff00">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Banco de Dad">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <script>
+    if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+      addEventListener('load', function () { navigator.serviceWorker.register('service-worker.js').catch(function (e) { console.warn('Service worker:', e); }); });
+    }
+  </script>
+  <!-- PWA:fim -->
+</head>
+<body>
+  <header class="topo">
+    <div class="marca">⚖️ <b>SK Jurídico HTML</b> <span class="versao" id="versao"></span></div>
+    <button class="chave-status" id="chave-status" data-ir="config" title="Chave da IA">🔑 sem chave</button>
+  </header>
+
+  <nav class="abas" id="abas" aria-label="Partes do app">
+    <button data-aba="processar" class="ativa">⚡ Processar</button>
+    <button data-aba="editor">✏️ Editor</button>
+    <button data-aba="conversa">💬 Conversa</button>
+    <button data-aba="documentos">📁 Documentos</button>
+    <button data-aba="biblioteca">📚 Modelos e ementas</button>
+    <button data-aba="regras">📜 Regras e memória</button>
+    <button data-aba="codigos">🧪 Códigos</button>
+    <button data-meuchat="1" title="O chat livre (separado do jurídico)">💬 Meu Chat</button>
+    <button data-aba="ferramentas">🧰 Ferramentas</button>
+    <button data-aba="config">⚙️ Config</button>
+  </nav>
+
+  <main>
+    <section class="painel ativo" id="painel-processar"></section>
+    <section class="painel" id="painel-editor"></section>
+    <section class="painel" id="painel-conversa"></section>
+    <section class="painel" id="painel-documentos"></section>
+    <section class="painel" id="painel-biblioteca"></section>
+    <section class="painel" id="painel-regras"></section>
+    <section class="painel" id="painel-codigos"></section>
+    <section class="painel" id="painel-ferramentas"></section>
+    <section class="painel" id="painel-config"></section>
+  </main>
+
+  <div id="avisos" class="avisos" aria-live="polite"></div>
+
+  <!-- Os módulos, NA ORDEM: 00 primeiro (o "caixa comum"), 99 por último (liga tudo). -->
+  <script src="lib/jszip.min.js"></script>
+  <script src="js/00-core.js"></script>
+  <script src="js/10-ia.js"></script>
+  <script src="js/lib/segredos.js"></script>
+  <script src="js/nuvem-embutida.js"></script>
+  <script src="js/lib/nuvem-neon.js"></script>
+  <script src="js/lib/reconhecer.js"></script>
+  <script src="js/12-online.js"></script>
+  <script src="js/13-nuvem.js"></script>
+  <script src="js/14-entrada.js"></script>
+  <script src="js/17-banco.js"></script>
+  <script src="js/12-voz.js"></script>
+  <script src="js/16-internet.js"></script>
+  <script src="js/22-drive.js"></script>
+  <script src="js/15-importar.js"></script>
+  <script src="js/18-texto.js"></script>
+  <script src="js/25-regras.js"></script>
+  <script src="js/21-motor.js"></script>
+<script src="js/20-processar.js"></script>
+  <script src="js/30-editor.js"></script>
+  <script src="js/35-docx.js"></script>
+  <script src="js/40-conversa.js"></script>
+  <script src="js/50-documentos.js"></script>
+  <script src="js/55-biblioteca.js"></script>
+  <script src="js/56-restaurar.js"></script>
+  <script src="js/lib/playground-replit.js"></script>
+  <script src="js/60-codigos.js"></script>
+  <script src="js/70-ferramentas.js"></script>
+  <script src="js/80-config.js"></script>
+  <script src="js/99-app.js"></script>
+<script>window.TEMA_APP = { id: 'juridico', barra: 'header.topo', padrao: 'claro', cores: {
+  claro: { '--bg': '#eef0f3', '--papel': '#ffffff', '--fg': '#1d2330', '--mut': '#5b6475', '--linha': '#d6dbe3', '--tinta': '#1d2a3a', '--tinta-2': '#2c4466', '--ouro': '#a07c2c', '--ouro-claro': '#f5ecd6', '--bom': '#2f7a55', '--bom-bg': '#e3f2ea', '--ruim': '#b3362b', '--ruim-bg': '#fbe7e4' },
+  escuro: { '--bg': '#12161d', '--papel': '#1b212b', '--fg': '#e6eaf0', '--mut': '#a3adbd', '--linha': '#2e3746', '--tinta': '#dbe4f0', '--tinta-2': '#9fbbe0', '--ouro': '#d8b25a', '--ouro-claro': '#3a3020', '--bom': '#5cc794', '--bom-bg': '#173326', '--ruim': '#ff8a7d', '--ruim-bg': '#3a1d1a' },
+  contraste: { '--bg': '#000000', '--papel': '#0d0d0d', '--fg': '#ffffff', '--mut': '#e0e0e0', '--linha': '#8a8a8a', '--tinta': '#ffffff', '--tinta-2': '#8cc4ff', '--ouro': '#ffd33d', '--ouro-claro': '#2a2400', '--bom': '#4dff8f', '--bom-bg': '#06260f', '--ruim': '#ff7070', '--ruim-bg': '#2d0909' },
+  papel: { '--bg': '#efe5cf', '--papel': '#fbf5e7', '--fg': '#2a2115', '--mut': '#67563c', '--linha': '#d6c5a2', '--tinta': '#2a2115', '--tinta-2': '#6f430e', '--ouro': '#8a5514', '--ouro-claro': '#f1e2bf', '--bom': '#3d6a28', '--bom-bg': '#e4ecd5', '--ruim': '#9b2c2c', '--ruim-bg': '#f4dcd4' } } };</script>
+<script src="js/tema.js"></script>
+<script>window.JANELA_BARRA = 'header.topo';</script>
+<script src="js/janela-pc.js"></script>
+</body>
+</html>

@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📂 Leitor Universal de Arquivos</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --card: #22263a;
+    --border: #2e3350;
+    --accent: #5b6ef5;
+    --accent2: #7c3aed;
+    --green: #22c55e;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --text: #e2e8f0;
+    --muted: #8892b0;
+    --user-bg: #1e3a5f;
+    --ai-bg: #1a2a1a;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  header h1 { font-size: 1.3rem; font-weight: 700; flex: 1; }
+  header span { font-size: 0.8rem; color: var(--muted); }
+
+  /* ── ZONA DE IMPORT ── */
+  #drop-zone {
+    margin: 24px;
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--surface);
+  }
+  #drop-zone:hover, #drop-zone.dragover {
+    border-color: var(--accent);
+    background: #1a1d3a;
+  }
+  #drop-zone .icon { font-size: 3rem; margin-bottom: 12px; }
+  #drop-zone h2 { font-size: 1.1rem; margin-bottom: 8px; }
+  #drop-zone p { color: var(--muted); font-size: 0.85rem; }
+  #drop-zone .formats {
+    margin-top: 16px;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .badge {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.75rem;
+    color: var(--accent);
+  }
+  #file-input { display: none; }
+
+  /* ── BOTÃO PRINCIPAL ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #4a5de0; }
+  .btn-green { background: var(--green); color: #000; }
+  .btn-green:hover { background: #16a34a; }
+  .btn-yellow { background: var(--yellow); color: #000; }
+  .btn-yellow:hover { background: #d97706; }
+  .btn-ghost {
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { background: var(--border); }
+  .btn-sm { padding: 6px 12px; font-size: 0.78rem; }
+
+  /* ── ABAS DE NAVEGAÇÃO ── */
+  #nav-tabs {
+    display: none;
+    gap: 4px;
+    padding: 0 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    padding: 12px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* ── CONTEÚDO ── */
+  #content { padding: 24px; display: none; }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .card-header {
+    padding: 12px 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .card-header h3 { font-size: 0.9rem; font-weight: 700; }
+  .card-body { padding: 16px; }
+
+  /* ── MENSAGENS ── */
+  .msg-block {
+    margin-bottom: 12px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .msg-header {
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    font-weight: 700;
+    gap: 8px;
+  }
+  .msg-header.user { background: var(--user-bg); color: #93c5fd; }
+  .msg-header.assistant { background: var(--ai-bg); color: #86efac; }
+  .msg-header.error { background: #3a1a1a; color: var(--red); }
+  .msg-content {
+    padding: 12px 14px;
+    font-size: 0.88rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: var(--bg);
+  }
+
+  /* ── CONVERSA ITEM ── */
+  .conv-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .conv-item-header {
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    background: var(--surface);
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .conv-item-header:hover { background: var(--card); }
+  .conv-title { font-weight: 700; font-size: 0.9rem; }
+  .conv-meta { font-size: 0.75rem; color: var(--muted); }
+  .conv-body { display: none; padding: 16px; }
+  .conv-body.open { display: block; }
+
+  /* ── CÓDIGO ── */
+  .code-block {
+    background: #0d1117;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.82rem;
+    overflow-x: auto;
+    white-space: pre;
+    color: #a8ff78;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  /* ── GRID INFO ── */
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .info-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+  }
+  .info-label { font-size: 0.72rem; color: var(--muted); margin-bottom: 4px; }
+  .info-value { font-size: 0.88rem; font-weight: 600; }
+
+  /* ── BARRA DE EXPORT ── */
+  #export-bar {
+    display: none;
+    position: sticky;
+    bottom: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 12px 24px;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  #export-bar span { font-size: 0.82rem; color: var(--muted); flex: 1; }
+
+  /* ── ALERTA ── */
+  .alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    margin-bottom: 16px;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .alert-warn { background: #3a2a00; border: 1px solid var(--yellow); color: #fde68a; }
+  .alert-info { background: #0a1a3a; border: 1px solid var(--accent); color: #93c5fd; }
+
+  /* ── RESPONSIVO ── */
+  @media (max-width: 600px) {
+    #drop-zone { padding: 32px 16px; }
+    header { padding: 12px 16px; }
+    #content { padding: 16px; }
+  }
+
+  /* ── CÓPIA FEEDBACK ── */
+  .copied { animation: flash 0.4s ease; }
+  @keyframes flash {
+    0% { opacity: 1; }
+    50% { opacity: 0.4; }
+    100% { opacity: 1; }
+  }
+
+  /* ── SCROLL ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>📂</div>
+  <h1>Leitor Universal de Arquivos</h1>
+  <span id="file-name-display">Nenhum arquivo carregado</span>
+  <button class="btn btn-ghost btn-sm" onclick="resetApp()">🔄 Novo arquivo</button>
+</header>
+
+<!-- ZONA DE IMPORT -->
+<div id="drop-zone" onclick="document.getElementById('file-input').click()">
+  <div class="icon">📥</div>
+  <h2>Arraste seu arquivo aqui ou clique para selecionar</h2>
+  <p>Suporta JSON, TXT, MD, CSV, HTML, JS, CSS e mais</p>
+  <div class="formats">
+    <span class="badge">JSON</span>
+    <span class="badge">TXT</span>
+    <span class="badge">MD</span>
+    <span class="badge">CSV</span>
+    <span class="badge">HTML</span>
+    <span class="badge">JS</span>
+    <span class="badge">CSS</span>
+    <span class="badge">XML</span>
+    <span class="badge">ZIP*</span>
+  </div>
+  <br>
+  <button class="btn btn-primary" onclick="event.stopPropagation(); document.getElementById('file-input').click()">
+    📁 Selecionar Arquivo
+  </button>
+</div>
+<input type="file" id="file-input" accept="*/*">
+
+<!-- ABAS -->
+<div id="nav-tabs" style="display:none; flex-wrap:wrap;">
+  <button class="tab-btn active" onclick="showTab('tab-overview')">📊 Visão Geral</button>
+  <button class="tab-btn" onclick="showTab('tab-conversations')">💬 Conversas</button>
+  <button class="tab-btn" onclick="showTab('tab-code')">💻 Códigos</button>
+  <button class="tab-btn" onclick="showTab('tab-settings')">⚙️ Configurações</button>
+  <button class="tab-btn" onclick="showTab('tab-memories')">🧠 Memórias</button>
+  <button class="tab-btn" onclick="showTab('tab-raw')">📄 Bruto</button>
+</div>
+
+<!-- CONTEÚDO PRINCIPAL -->
+<div id="content">
+
+  <!-- ABA: VISÃO GERAL -->
+  <div id="tab-overview" class="section active"></div>
+
+  <!-- ABA: CONVERSAS -->
+  <div id="tab-conversations" class="section"></div>
+
+  <!-- ABA: CÓDIGOS -->
+  <div id="tab-code" class="section"></div>
+
+  <!-- ABA: CONFIGURAÇÕES -->
+  <div id="tab-settings" class="section"></div>
+
+  <!-- ABA: MEMÓRIAS -->
+  <div id="tab-memories" class="section"></div>
+
+  <!-- ABA: BRUTO -->
+  <div id="tab-raw" class="section"></div>
+
+</div>
+
+<!-- BARRA DE EXPORTAÇÃO -->
+<div id="export-bar" style="display:none; display:flex;">
+  <span id="export-info">Arquivo carregado</span>
+  <button class="btn btn-ghost btn-sm" onclick="exportAs('txt')">📄 TXT</button>
+  <button class="btn btn-ghost btn-sm" onclick="exportAs('md')">📝 Markdown</button>
+  <button class="btn btn-ghost btn-sm" onclick="exportAs('json')">🗂️ JSON limpo</button>
+  <button class="btn btn-green btn-sm" onclick="exportAs('html')">🌐 HTML</button>
+</div>
+
+<!-- PARTE 2 COLA AQUI EMBAIXO -->
+<script>
+// ═══════════════════════════════════════════════
+//  ESTADO GLOBAL
+// ═══════════════════════════════════════════════
+let APP = {
+  rawText: '',
+  rawJSON: null,
+  fileName: '',
+  fileType: '',
+  parsed: null
+};
+
+// ═══════════════════════════════════════════════
+//  DRAG & DROP
+// ═══════════════════════════════════════════════
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+
+dropZone.addEventListener('dragover', e => {
+  e.preventDefault();
+  dropZone.classList.add('dragover');
+});
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+});
+fileInput.addEventListener('change', e => {
+  if (e.target.files[0]) processFile(e.target.files[0]);
+});
+
+// ═══════════════════════════════════════════════
+//  PROCESSAR ARQUIVO
+// ═══════════════════════════════════════════════
+function processFile(file) {
+  APP.fileName = file.name;
+  APP.fileType = file.name.split('.').pop().toLowerCase();
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    APP.rawText = e.target.result;
+
+    // Tenta parsear como JSON
+    if (APP.fileType === 'json') {
+      try {
+        APP.rawJSON = JSON.parse(APP.rawText);
+        APP.parsed = detectFormat(APP.rawJSON);
+      } catch(err) {
+        APP.rawJSON = null;
+        APP.parsed = { type: 'text', content: APP.rawText };
+      }
+    } else {
+      APP.rawJSON = null;
+      APP.parsed = { type: APP.fileType, content: APP.rawText };
+    }
+
+    renderAll();
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+// ═══════════════════════════════════════════════
+//  DETECTAR FORMATO DO JSON
+// ═══════════════════════════════════════════════
+function detectFormat(json) {
+  // Formato: ai-code-studio (seu app)
+  if (json.app === 'ai-code-studio' || json.conversations) {
+    return { type: 'ai-code-studio', data: json };
+  }
+  // Formato: ChatGPT export
+  if (Array.isArray(json) && json[0]?.mapping) {
+    return { type: 'chatgpt', data: json };
+  }
+  // Formato: array de mensagens simples
+  if (Array.isArray(json) && json[0]?.role) {
+    return { type: 'messages', data: json };
+  }
+  // Formato: objeto com messages
+  if (json.messages && Array.isArray(json.messages)) {
+    return { type: 'messages', data: json.messages };
+  }
+  // JSON genérico
+  return { type: 'json-generic', data: json };
+}
+
+// ═══════════════════════════════════════════════
+//  RENDERIZAR TUDO
+// ═══════════════════════════════════════════════
+function renderAll() {
+  document.getElementById('drop-zone').style.display = 'none';
+  document.getElementById('nav-tabs').style.display = 'flex';
+  document.getElementById('content').style.display = 'block';
+  document.getElementById('export-bar').style.display = 'flex';
+  document.getElementById('file-name-display').textContent = APP.fileName;
+  document.getElementById('export-info').textContent =
+    `📂 ${APP.fileName} · ${formatBytes(APP.rawText.length)}`;
+
+  const p = APP.parsed;
+
+  if (p.type === 'ai-code-studio') {
+    renderAIStudio(p.data);
+  } else if (p.type === 'chatgpt') {
+    renderChatGPT(p.data);
+  } else if (p.type === 'messages') {
+    renderMessages(p.data);
+  } else if (p.type === 'json-generic') {
+    renderGenericJSON(p.data);
+  } else {
+    renderText(p.content, p.type);
+  }
+
+  // Sempre mostra o bruto
+  renderRaw();
+  showTab('tab-overview');
+}
+
+// ═══════════════════════════════════════════════
+//  RENDER: AI-CODE-STUDIO (SEU FORMATO)
+// ═══════════════════════════════════════════════
+function renderAIStudio(data) {
+  const convs = data.conversations || {};
+  const tabs  = data.codeTabs || [];
+  const mems  = data.memories || [];
+  const sets  = data.settings || {};
+
+  const convList = Object.values(convs);
+  let totalMsgs  = 0;
+  convList.forEach(c => totalMsgs += (c.messages || []).length);
+
+  // ── VISÃO GERAL ──
+  let ov = `
+    <div class="alert alert-warn">
+      ⚠️ <div><strong>Atenção:</strong> Este arquivo pode conter chaves de API.
+      Verifique a aba <strong>Configurações</strong> e revogue chaves expostas.</div>
+    </div>
+    <div class="info-grid">
+      ${infoBox('📱 App', data.app || '—')}
+      ${infoBox('🔖 Versão', data._version || '—')}
+      ${infoBox('📅 Exportado em', fmtDate(data.exportedAt))}
+      ${infoBox('💬 Conversas', convList.length)}
+      ${infoBox('✉️ Mensagens', totalMsgs)}
+      ${infoBox('💻 Abas de Código', tabs.length)}
+      ${infoBox('🧠 Memórias', mems.length)}
+      ${infoBox('🤖 Modelo', sets.model || '—')}
+      ${infoBox('🌡️ Temperature', sets.temperature ?? '—')}
+      ${infoBox('🔢 Max Tokens', sets.maxTokens ?? '—')}
+      ${infoBox('📏 Limite Contexto', sets.contextLimit ?? '—')}
+      ${infoBox('📝 System Prompt', sets.systemPrompt ? '✅ Definido' : '❌ Vazio')}
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>📝 System Prompt</h3>
+        <button class="btn btn-ghost btn-sm" onclick="copyText(this,'${escJS(sets.systemPrompt||'')}')">📋 Copiar</button>
+      </div>
+      <div class="card-body">
+        <div class="code-block">${esc(sets.systemPrompt || '(vazio)')}</div>
+      </div>
+    </div>`;
+  document.getElementById('tab-overview').innerHTML = ov;
+
+  // ── CONVERSAS ──
+  let cvHtml = `<div class="alert alert-info">
+    💬 <div>${convList.length} conversa(s) encontrada(s). Clique para expandir.</div>
+  </div>`;
+
+  convList.forEach((conv, ci) => {
+    const msgs = conv.messages || [];
+    const id   = 'conv_body_' + ci;
+    cvHtml += `
+      <div class="conv-item">
+        <div class="conv-item-header" onclick="toggleConv('${id}')">
+          <div>
+            <div class="conv-title">💬 ${esc(conv.title || 'Sem título')}</div>
+            <div class="conv-meta">${msgs.length} mensagens · ${fmtDate(conv.createdAt)}</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-ghost btn-sm"
+              onclick="event.stopPropagation();copyConv(${ci})">📋 Copiar tudo</button>
+            <button class="btn btn-ghost btn-sm"
+              onclick="event.stopPropagation();downloadConv(${ci})">⬇️ Baixar</button>
+            <span style="color:var(--muted);font-size:1.1rem">▼</span>
+          </div>
+        </div>
+        <div class="conv-body" id="${id}">
+          ${msgs.map(m => renderMsg(m)).join('')}
+        </div>
+      </div>`;
+  });
+  document.getElementById('tab-conversations').innerHTML = cvHtml;
+
+  // ── CÓDIGOS ──
+  let cdHtml = '';
+  if (tabs.length === 0) {
+    cdHtml = '<p style="color:var(--muted)">Nenhuma aba de código encontrada.</p>';
+  } else {
+    tabs.forEach((tab, ti) => {
+      const lang = tab.language || 'html';
+      const cont = tab.content || '';
+      cdHtml += `
+        <div class="card">
+          <div class="card-header">
+            <h3>💻 ${esc(tab.name || 'código_' + ti)} <span class="badge">${lang}</span></h3>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button class="btn btn-ghost btn-sm"
+                onclick="copyText(this, document.getElementById('code_${ti}').textContent)">
+                📋 Copiar</button>
+              <button class="btn btn-ghost btn-sm"
+                onclick="downloadCode(${ti})">⬇️ Baixar .${lang}</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="code-block" id="code_${ti}">${esc(cont)}</div>
+          </div>
+        </div>`;
+    });
+  }
+  document.getElementById('tab-code').innerHTML = cdHtml;
+
+  // ── CONFIGURAÇÕES ──
+  const keys = sets.keys || {};
+  let stHtml = `
+    <div class="alert alert-warn">
+      🔑 <div><strong>Chaves de API detectadas.</strong>
+      Revogue qualquer chave exposta imediatamente no painel do provedor.</div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>🔑 Chaves de API</h3></div>
+      <div class="card-body">
+        <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+          <tr style="color:var(--muted);border-bottom:1px solid var(--border);">
+            <th style="text-align:left;padding:8px;">Provedor</th>
+            <th style="text-align:left;padding:8px;">Chave</th>
+            <th style="padding:8px;">Status</th>
+          </tr>
+          ${Object.entries(keys).map(([k,v]) => `
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:8px;font-weight:600;">${esc(k)}</td>
+              <td style="padding:8px;font-family:monospace;font-size:0.78rem;color:${v?'#fde68a':'var(--muted)'}">
+                ${v ? maskKey(v) : '(vazio)'}
+              </td>
+              <td style="padding:8px;text-align:center;">
+                ${v ? '<span style="color:var(--red)">⚠️ Exposta</span>'
+                    : '<span style="color:var(--muted)">—</span>'}
+              </td>
+            </tr>`).join('')}
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <h3>⚙️ Todas as Configurações</h3>
+        <button class="btn btn-ghost btn-sm"
+          onclick="copyText(this, JSON.stringify(APP.rawJSON.settings, null, 2))">📋 Copiar JSON</button>
+      </div>
+      <div class="card-body">
+        <div class="code-block">${esc(JSON.stringify(sets, null, 2))}</div>
+      </div>
+    </div>`;
+  document.getElementById('tab-settings').innerHTML = stHtml;
+
+  // ── MEMÓRIAS ──
+  let mmHtml = '';
+  if (mems.length === 0) {
+    mmHtml = '<p style="color:var(--muted)">Nenhuma memória encontrada.</p>';
+  } else {
+    mems.forEach((mem, mi) => {
+      mmHtml += `
+        <div class="card">
+          <div class="card-header">
+            <h3>🧠 ${esc(mem.title || 'Memória ' + (mi+1))}</h3>
+            <button class="btn btn-ghost btn-sm"
+              onclick="copyText(this, ${JSON.stringify(mem.content||'')})">📋 Copiar</button>
+          </div>
+          <div class="card-body">
+            <div style="font-size:0.82rem;color:var(--muted);margin-bottom:8px;">
+              📅 ${fmtDate(mem.createdAt)} · 🏷️ ${(mem.tags||[]).join(', ')||'sem tags'}
+            </div>
+            <div style="white-space:pre-wrap;font-size:0.88rem;line-height:1.6;">
+              ${esc(mem.content||'')}
+            </div>
+          </div>
+        </div>`;
+    });
+  }
+  document.getElementById('tab-memories').innerHTML = mmHtml;
+}
+
+// ═══════════════════════════════════════════════
+//  RENDER: MENSAGEM INDIVIDUAL
+// ═══════════════════════════════════════════════
+function renderMsg(m) {
+  const role    = m.role || 'unknown';
+  const content = m.content || '';
+  const ts      = m.timestamp || m.ts || 0;
+  const model   = m.model ? `<span style="color:var(--muted);font-weight:400"> · ${esc(m.model)}</span>` : '';
+  const roleLabel = role === 'user' ? '👤 Você' :
+                    role === 'assistant' ? '🤖 IA' :
+                    role === 'error' ? '❌ Erro' : role;
+  const safeContent = JSON.stringify(content);
+
+  return `
+    <div class="msg-block">
+      <div class="msg-header ${role === 'error' ? 'error' : role}">
+        <span>${roleLabel}${model}</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-weight:400;color:var(--muted)">${ts ? fmtDate(ts) : ''}</span>
+          <button class="btn btn-ghost btn-sm"
+            onclick="copyText(this, ${safeContent})">📋</button>
+        </div>
+      </div>
+      <div class="msg-content">${esc(content)}</div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════
+//  RENDER: CHATGPT FORMAT
+// ═══════════════════════════════════════════════
+function renderChatGPT(data) {
+  document.getElementById('tab-overview').innerHTML = `
+    <div class="alert alert-info">📤 Formato detectado: <strong>ChatGPT Export</strong></div>
+    ${infoBox('💬 Conversas', data.length)}`;
+
+  let cvHtml = '';
+  data.forEach((conv, ci) => {
+    const msgs = Object.values(conv.mapping || {})
+      .filter(n => n.message?.content?.parts)
+      .sort((a,b) => (a.message.create_time||0) - (b.message.create_time||0));
+    const id = 'cgpt_' + ci;
+    cvHtml += `
+      <div class="conv-item">
+        <div class="conv-item-header" onclick="toggleConv('${id}')">
+          <div>
+            <div class="conv-title">💬 ${esc(conv.title||'Sem título')}</div>
+            <div class="conv-meta">${msgs.length} mensagens</div>
+          </div>
+          <span style="color:var(--muted)">▼</span>
+        </div>
+        <div class="conv-body" id="${id}">
+          ${msgs.map(n => renderMsg({
+            role: n.message.author?.role || 'unknown',
+            content: (n.message.content.parts||[]).join('\n'),
+            ts: n.message.create_time ? n.message.create_time * 1000 : 0
+          })).join('')}
+        </div>
+      </div>`;
+  });
+  document.getElementById('tab-conversations').innerHTML = cvHtml;
+  document.getElementById('tab-code').innerHTML = '<p style="color:var(--muted)">N/A para este formato.</p>';
+  document.getElementById('tab-settings').innerHTML = '<p style="color:var(--muted)">N/A para este formato.</p>';
+  document.getElementById('tab-memories').innerHTML = '<p style="color:var(--muted)">N/A para este formato.</p>';
+}
+
+// ═══════════════════════════════════════════════
+//  RENDER: MESSAGES SIMPLES
+// ═══════════════════════════════════════════════
+function renderMessages(msgs) {
+  document.getElementById('tab-overview').innerHTML =
+    `<div class="alert alert-info">📋 Formato: lista de mensagens · ${msgs.length} itens</div>`;
+  document.getElementById('tab-conversations').innerHTML =
+    msgs.map(m => renderMsg(m)).join('');
+  ['tab-code','tab-settings','tab-memories'].forEach(id =>
+    document.getElementById(id).innerHTML = '<p style="color:var(--muted)">N/A para este formato.</p>');
+}
+
+// ═══════════════════════════════════════════════
+//  RENDER: JSON GENÉRICO
+// ═══════════════════════════════════════════════
+function renderGenericJSON(data) {
+  const str = JSON.stringify(data, null, 2);
+  document.getElementById('tab-overview').innerHTML = `
+    <div class="alert alert-info">🗂️ JSON genérico detectado · ${formatBytes(str.length)}</div>
+    <div class="card">
+      <div class="card-header">
+        <h3>📄 Conteúdo</h3>
+        <button class="btn btn-ghost btn-sm" onclick="copyText(this, ${JSON.stringify(str)})">📋 Copiar</button>
+      </div>
+      <div class="card-body"><div class="code-block">${esc(str)}</div></div>
+    </div>`;
+  ['tab-conversations','tab-code','tab-settings','tab-memories'].forEach(id =>
+    document.getElementById(id).innerHTML = '<p style="color:var(--muted)">N/A para este formato.</p>');
+}
+
+// ═══════════════════════════════════════════════
+//  RENDER: TEXTO / OUTROS FORMATOS
+// ═══════════════════════════════════════════════
+function renderText(content, type) {
+  document.getElementById('tab-overview').innerHTML = `
+    <div class="alert alert-info">📄 Arquivo de texto · Tipo: <strong>${type.toUpperCase()}</strong>
+    · ${formatBytes(content.length)}</div>
+    <div class="card">
+      <div class="card-header">
+        <h3>📄 Conteúdo</h3>
+        <button class="btn btn-ghost btn-sm" onclick="copyText(this, ${JSON.stringify(content)})">📋 Copiar</button>
+      </div>
+      <div class="card-body"><div class="code-block">${esc(content)}</div></div>
+    </div>`;
+  ['tab-conversations','tab-code','tab-settings','tab-memories'].forEach(id =>
+    document.getElementById(id).innerHTML = '<p style="color:var(--muted)">N/A para este formato.</p>');
+}
+
+// ═══════════════════════════════════════════════
+//  RENDER: BRUTO
+// ═══════════════════════════════════════════════
+function renderRaw() {
+  const str = APP.rawJSON
+    ? JSON.stringify(APP.rawJSON, null, 2)
+    : APP.rawText;
+  document.getElementById('tab-raw').innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <h3>📄 Conteúdo Bruto · ${formatBytes(str.length)}</h3>
+        <button class="btn btn-ghost btn-sm" onclick="copyText(this, ${JSON.stringify(str)})">📋 Copiar tudo</button>
+      </div>
+      <div class="card-body"><div class="code-block">${esc(str)}</div></div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════
+//  NAVEGAÇÃO DE ABAS
+// ═══════════════════════════════════════════════
+function showTab(tabId) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  const idx = ['tab-overview','tab-conversations','tab-code',
+                'tab-settings','tab-memories','tab-raw'].indexOf(tabId);
+  const btns = document.querySelectorAll('.tab-btn');
+  if (btns[idx]) btns[idx].classList.add('active');
+}
+
+function toggleConv(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('open');
+}
+
+// ═══════════════════════════════════════════════
+//  RESET
+// ═══════════════════════════════════════════════
+function resetApp() {
+  APP = { rawText:'', rawJSON:null, fileName:'', fileType:'', parsed:null };
+  document.getElementById('drop-zone').style.display = 'block';
+  document.getElementById('nav-tabs').style.display = 'none';
+  document.getElementById('content').style.display = 'none';
+  document.getElementById('export-bar').style.display = 'none';
+  document.getElementById('file-name-display').textContent = 'Nenhum arquivo carregado';
+  document.getElementById('file-input').value = '';
+  ['tab-overview','tab-conversations','tab-code',
+   'tab-settings','tab-memories','tab-raw'].forEach(id =>
+    document.getElementById(id).innerHTML = '');
+}
+
+// ═══════════════════════════════════════════════
+//  UTILITÁRIOS
+// ═══════════════════════════════════════════════
+function esc(str) {
+  return String(str||'')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escJS(str) {
+  return String(str||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'")
+    .replace(/\n/g,'\\n').replace(/\r/g,'');
+}
+function fmtDate(ts) {
+  if (!ts) return '—';
+  const d = new Date(typeof ts === 'number' && ts < 1e12 ? ts * 1000 : ts);
+  if (isNaN(d)) return String(ts);
+  return d.toLocaleString('pt-BR');
+}
+function formatBytes(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+  return (b/1048576).toFixed(1) + ' MB';
+}
+function infoBox(label, value) {
+  return `<div class="info-item">
+    <div class="info-label">${label}</div>
+    <div class="info-value">${esc(String(value))}</div>
+  </div>`;
+}
+function maskKey(key) {
+  if (!key || key.length < 8) return '••••••••';
+  return key.slice(0,6) + '••••••••' + key.slice(-4);
+}
+
+// ═══════════════════════════════════════════════
+//  COPIAR TEXTO
+// ═══════════════════════════════════════════════
+function copyText(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✅ Copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 1500);
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.textContent = '✅'; setTimeout(() => btn.textContent = '📋', 1500);
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  COPIAR CONVERSA INTEIRA
+// ═══════════════════════════════════════════════
+function copyConv(idx) {
+  const convs = Object.values(APP.rawJSON?.conversations || {});
+  const conv  = convs[idx];
+  if (!conv) return;
+  let txt = `=== ${conv.title || 'Conversa'} ===\n\n`;
+  (conv.messages||[]).forEach(m => {
+    const role = m.role === 'user' ? 'VOCÊ' : m.role === 'assistant' ? 'IA' : 'ERRO';
+    txt += `[${role}] ${fmtDate(m.timestamp||m.ts||0)}\n${m.content||''}\n\n${'─'.repeat(60)}\n\n`;
+  });
+  const btn = event.target;
+  navigator.clipboard.writeText(txt).then(() => {
+    const o = btn.textContent; btn.textContent = '✅ Copiado!';
+    setTimeout(() => btn.textContent = o, 1500);
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  BAIXAR CONVERSA
+// ═══════════════════════════════════════════════
+function downloadConv(idx) {
+  const convs = Object.values(APP.rawJSON?.conversations || {});
+  const conv  = convs[idx];
+  if (!conv) return;
+  let txt = `=== ${conv.title || 'Conversa'} ===\n\n`;
+  (conv.messages||[]).forEach(m => {
+    const role = m.role === 'user' ? 'VOCÊ' : m.role === 'assistant' ? 'IA' : 'ERRO';
+    txt += `[${role}] ${fmtDate(m.timestamp||m.ts||0)}\n${m.content||''}\n\n${'─'.repeat(60)}\n\n`;
+  });
+  download(txt, (conv.title||'conversa').replace(/[^a-z0-9]/gi,'_') + '.txt', 'text/plain');
+}
+
+// ═══════════════════════════════════════════════
+//  BAIXAR CÓDIGO
+// ═══════════════════════════════════════════════
+function downloadCode(idx) {
+  const tab = (APP.rawJSON?.codeTabs || [])[idx];
+  if (!tab) return;
+  const ext  = tab.language || 'html';
+  const name = (tab.name || 'codigo_' + idx).replace(/\.[^.]+$/, '') + '.' + ext;
+  download(tab.content || '', name, 'text/plain');
+}
+
+// ═══════════════════════════════════════════════
+//  DOWNLOAD GENÉRICO
+// ═══════════════════════════════════════════════
+function download(content, filename, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// PARTE 3 COLA AQUI EMBAIXO
+</script>
+<script>
+// ═══════════════════════════════════════════════
+//  EXPORTAR EM VÁRIOS FORMATOS
+// ═══════════════════════════════════════════════
+function exportAs(format) {
+  const data = APP.rawJSON;
+  const name = APP.fileName.replace(/\.[^.]+$/, '');
+
+  if (format === 'txt')  return exportTXT(data, name);
+  if (format === 'md')   return exportMD(data, name);
+  if (format === 'json') return exportJSON(data, name);
+  if (format === 'html') return exportHTML(data, name);
+}
+
+// ─────────────────────────────────────────────
+//  EXPORTAR: TXT
+// ─────────────────────────────────────────────
+function exportTXT(data, name) {
+  let out = '';
+
+  if (!data) {
+    // arquivo de texto simples
+    download(APP.rawText, name + '.txt', 'text/plain');
+    return;
+  }
+
+  out += `╔══════════════════════════════════════════════╗\n`;
+  out += `║  EXPORTAÇÃO: ${(name).substring(0,30).padEnd(30)} ║\n`;
+  out += `║  Data: ${new Date().toLocaleString('pt-BR').padEnd(37)} ║\n`;
+  out += `╚══════════════════════════════════════════════╝\n\n`;
+
+  // Conversas
+  const convs = Object.values(data.conversations || {});
+  if (convs.length > 0) {
+    out += `${'═'.repeat(60)}\n`;
+    out += `  CONVERSAS (${convs.length})\n`;
+    out += `${'═'.repeat(60)}\n\n`;
+
+    convs.forEach((conv, ci) => {
+      out += `┌─ CONVERSA ${ci + 1}: ${conv.title || 'Sem título'}\n`;
+      out += `│  Criada em: ${fmtDate(conv.createdAt)}\n`;
+      out += `│  Mensagens: ${(conv.messages||[]).length}\n`;
+      out += `└${'─'.repeat(58)}\n\n`;
+
+      (conv.messages || []).forEach(m => {
+        const role = m.role === 'user'      ? '👤 VOCÊ'
+                   : m.role === 'assistant' ? '🤖 IA'
+                   : '⚠️ SISTEMA';
+        const ts = fmtDate(m.timestamp || m.ts || 0);
+        out += `  ${role}  [${ts}]\n`;
+        out += `  ${(m.content||'').split('\n').join('\n  ')}\n\n`;
+        out += `  ${'·'.repeat(56)}\n\n`;
+      });
+    });
+  }
+
+  // Memórias
+  const mems = data.memories || [];
+  if (mems.length > 0) {
+    out += `${'═'.repeat(60)}\n`;
+    out += `  MEMÓRIAS (${mems.length})\n`;
+    out += `${'═'.repeat(60)}\n\n`;
+    mems.forEach((m, i) => {
+      out += `[${i+1}] ${m.title || 'Memória'}\n`;
+      out += `${m.content || ''}\n\n`;
+    });
+  }
+
+  // Códigos
+  const tabs = data.codeTabs || [];
+  if (tabs.length > 0) {
+    out += `${'═'.repeat(60)}\n`;
+    out += `  ABAS DE CÓDIGO (${tabs.length})\n`;
+    out += `${'═'.repeat(60)}\n\n`;
+    tabs.forEach((t, i) => {
+      out += `── ${t.name || 'código_'+i} [${t.language||'html'}] ──\n`;
+      out += `${t.content || '(vazio)'}\n\n`;
+    });
+  }
+
+  download(out, name + '_exportado.txt', 'text/plain');
+}
+
+// ─────────────────────────────────────────────
+//  EXPORTAR: MARKDOWN
+// ─────────────────────────────────────────────
+function exportMD(data, name) {
+  let out = '';
+
+  if (!data) {
+    download(APP.rawText, name + '.md', 'text/markdown');
+    return;
+  }
+
+  const sets = data.settings || {};
+  out += `# 📂 ${name}\n\n`;
+  out += `> Exportado em: ${new Date().toLocaleString('pt-BR')}  \n`;
+  out += `> App: ${data.app || '—'} · Versão: ${data._version || '—'}\n\n`;
+  out += `---\n\n`;
+
+  // Sumário
+  const convs = Object.values(data.conversations || {});
+  const tabs  = data.codeTabs || [];
+  const mems  = data.memories || [];
+  let totalMsgs = 0;
+  convs.forEach(c => totalMsgs += (c.messages||[]).length);
+
+  out += `## 📊 Resumo\n\n`;
+  out += `| Item | Quantidade |\n|------|------------|\n`;
+  out += `| 💬 Conversas | ${convs.length} |\n`;
+  out += `| ✉️ Mensagens | ${totalMsgs} |\n`;
+  out += `| 💻 Abas de Código | ${tabs.length} |\n`;
+  out += `| 🧠 Memórias | ${mems.length} |\n`;
+  out += `| 🤖 Modelo | ${sets.model || '—'} |\n\n`;
+  out += `---\n\n`;
+
+  // System Prompt
+  if (sets.systemPrompt) {
+    out += `## 📝 System Prompt\n\n\`\`\`\n${sets.systemPrompt}\n\`\`\`\n\n---\n\n`;
+  }
+
+  // Conversas
+  if (convs.length > 0) {
+    out += `## 💬 Conversas\n\n`;
+    convs.forEach((conv, ci) => {
+      out += `### ${ci+1}. ${conv.title || 'Sem título'}\n\n`;
+      out += `*${(conv.messages||[]).length} mensagens · ${fmtDate(conv.createdAt)}*\n\n`;
+
+      (conv.messages || []).forEach(m => {
+        const role  = m.role === 'user'      ? '**👤 Você**'
+                    : m.role === 'assistant' ? '**🤖 IA**'
+                    : '**⚠️ Erro**';
+        const ts    = fmtDate(m.timestamp || m.ts || 0);
+        const model = m.model ? ` · *${m.model}*` : '';
+        out += `#### ${role}${model} — ${ts}\n\n`;
+        out += `${m.content || ''}\n\n`;
+        out += `---\n\n`;
+      });
+    });
+  }
+
+  // Memórias
+  if (mems.length > 0) {
+    out += `## 🧠 Memórias\n\n`;
+    mems.forEach((m, i) => {
+      out += `### ${i+1}. ${m.title || 'Memória'}\n\n`;
+      out += `${m.content || ''}\n\n---\n\n`;
+    });
+  }
+
+  // Códigos
+  if (tabs.length > 0) {
+    out += `## 💻 Abas de Código\n\n`;
+    tabs.forEach((t, i) => {
+      const lang = t.language || 'html';
+      out += `### ${t.name || 'código_'+i}\n\n`;
+      out += `\`\`\`${lang}\n${t.content || ''}\n\`\`\`\n\n---\n\n`;
+    });
+  }
+
+  download(out, name + '_exportado.md', 'text/markdown');
+}
+
+// ─────────────────────────────────────────────
+//  EXPORTAR: JSON LIMPO (sem chaves de API)
+// ─────────────────────────────────────────────
+function exportJSON(data, name) {
+  if (!data) {
+    download(APP.rawText, name + '_limpo.json', 'application/json');
+    return;
+  }
+
+  // Cópia profunda sem chaves de API
+  const clean = JSON.parse(JSON.stringify(data));
+
+  if (clean.settings && clean.settings.keys) {
+    Object.keys(clean.settings.keys).forEach(k => {
+      clean.settings.keys[k] = '';
+    });
+  }
+  if (clean.settings && clean.settings.serperKey) {
+    clean.settings.serperKey = '';
+  }
+
+  // Marca como exportado por esta ferramenta
+  clean._exportedBy    = 'Leitor Universal';
+  clean._exportedAt    = new Date().toISOString();
+  clean._keysRemoved   = true;
+
+  download(
+    JSON.stringify(clean, null, 2),
+    name + '_limpo.json',
+    'application/json'
+  );
+}
+
+// ─────────────────────────────────────────────
+//  EXPORTAR: HTML LEGÍVEL (relatório completo)
+// ─────────────────────────────────────────────
+function exportHTML(data, name) {
+  const convs = data ? Object.values(data.conversations || {}) : [];
+  const tabs  = data ? (data.codeTabs || []) : [];
+  const mems  = data ? (data.memories  || []) : [];
+  const sets  = data ? (data.settings  || {}) : {};
+
+  let body = '';
+
+  // Cabeçalho do relatório
+  body += `<div class="header">
+    <h1>📂 ${esc(name)}</h1>
+    <p>Exportado em: ${new Date().toLocaleString('pt-BR')} · 
+       App: ${esc(data?.app||'—')} · Versão: ${esc(data?._version||'—')}</p>
+  </div>`;
+
+  // Conversas
+  if (convs.length > 0) {
+    body += `<h2>💬 Conversas</h2>`;
+    convs.forEach((conv, ci) => {
+      body += `<div class="conv">
+        <div class="conv-title">
+          ${ci+1}. ${esc(conv.title||'Sem título')}
+          <span class="meta">${(conv.messages||[]).length} msgs · ${fmtDate(conv.createdAt)}</span>
+        </div>`;
+      (conv.messages||[]).forEach(m => {
+        const cls = m.role === 'user' ? 'user'
+                  : m.role === 'assistant' ? 'ai' : 'err';
+        const lbl = m.role === 'user' ? '👤 Você'
+                  : m.role === 'assistant' ? '🤖 IA' : '⚠️ Erro';
+        body += `<div class="msg ${cls}">
+          <div class="msg-meta">${lbl} · ${fmtDate(m.timestamp||m.ts||0)}
+            ${m.model ? `· <em>${esc(m.model)}</em>` : ''}
+          </div>
+          <div class="msg-text">${esc(m.content||'')}</div>
+        </div>`;
+      });
+      body += `</div>`;
+    });
+  }
+
+  // Memórias
+  if (mems.length > 0) {
+    body += `<h2>🧠 Memórias</h2>`;
+    mems.forEach((m, i) => {
+      body += `<div class="mem">
+        <strong>${i+1}. ${esc(m.title||'Memória')}</strong>
+        <pre>${esc(m.content||'')}</pre>
+      </div>`;
+    });
+  }
+
+  // Códigos
+  if (tabs.length > 0) {
+    body += `<h2>💻 Abas de Código</h2>`;
+    tabs.forEach((t, i) => {
+      body += `<div class="code-wrap">
+        <div class="code-title">${esc(t.name||'código_'+i)} 
+          <span class="badge">${esc(t.language||'html')}</span>
+        </div>
+        <pre class="code">${esc(t.content||'')}</pre>
+      </div>`;
+    });
+  }
+
+  // System Prompt
+  if (sets.systemPrompt) {
+    body += `<h2>📝 System Prompt</h2>
+      <pre class="code">${esc(sets.systemPrompt)}</pre>`;
+  }
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${esc(name)} — Relatório</title>
+<style>
+  body{font-family:'Segoe UI',sans-serif;background:#0f1117;color:#e2e8f0;
+       max-width:900px;margin:0 auto;padding:24px;line-height:1.6}
+  .header{background:#1a1d27;border:1px solid #2e3350;border-radius:12px;
+          padding:20px;margin-bottom:24px}
+  .header h1{margin:0 0 8px;font-size:1.4rem}
+  .header p{color:#8892b0;margin:0;font-size:0.85rem}
+  h2{color:#5b6ef5;border-bottom:1px solid #2e3350;padding-bottom:8px;
+     margin:32px 0 16px}
+  .conv{background:#1a1d27;border:1px solid #2e3350;border-radius:12px;
+        margin-bottom:20px;overflow:hidden}
+  .conv-title{padding:14px 16px;background:#22263a;font-weight:700;
+              display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+  .meta{color:#8892b0;font-size:0.8rem;font-weight:400}
+  .msg{margin:12px 16px;border-radius:8px;overflow:hidden;
+       border:1px solid #2e3350}
+  .msg-meta{padding:8px 12px;font-size:0.78rem;font-weight:700}
+  .msg.user .msg-meta{background:#1e3a5f;color:#93c5fd}
+  .msg.ai   .msg-meta{background:#1a2a1a;color:#86efac}
+  .msg.err  .msg-meta{background:#3a1a1a;color:#ef4444}
+  .msg-text{padding:12px;white-space:pre-wrap;font-size:0.88rem;
+            background:#0f1117;word-break:break-word}
+  .mem{background:#1a1d27;border:1px solid #2e3350;border-radius:8px;
+       padding:16px;margin-bottom:12px}
+  .mem pre{white-space:pre-wrap;font-size:0.85rem;margin-top:8px;
+           color:#a8ff78;background:#0d1117;padding:12px;border-radius:6px}
+  .code-wrap{background:#1a1d27;border:1px solid #2e3350;border-radius:8px;
+             margin-bottom:16px;overflow:hidden}
+  .code-title{padding:10px 16px;background:#22263a;font-weight:700;
+              font-size:0.88rem}
+  .badge{background:#22263a;border:1px solid #2e3350;border-radius:20px;
+         padding:2px 10px;font-size:0.72rem;color:#5b6ef5;margin-left:8px}
+  .code{background:#0d1117;color:#a8ff78;padding:16px;margin:0;
+        overflow-x:auto;font-size:0.82rem;font-family:'Courier New',monospace;
+        white-space:pre;max-height:500px;overflow-y:auto}
+  @media print{body{background:#fff;color:#000}
+    .msg-text,.code{background:#f5f5f5;color:#000}}
+</style>
+</head>
+<body>${body}</body>
+</html>`;
+
+  download(html, name + '_relatorio.html', 'text/html');
+}
+
+// ═══════════════════════════════════════════════
+//  INICIALIZAÇÃO
+// ═══════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  // Esconde barra de export até carregar arquivo
+  document.getElementById('export-bar').style.display = 'none';
+});
+</script>
+
+</body>
+</html>

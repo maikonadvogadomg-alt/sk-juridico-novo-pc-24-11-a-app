@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📦 Banco de Comandos Termux</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: sans-serif;
+    background: #0f1117;
+    color: #e0e0e0;
+    padding: 16px;
+  }
+  h1 {
+    text-align: center;
+    color: #7dd3fc;
+    margin-bottom: 8px;
+    font-size: 1.3rem;
+  }
+  .subtitulo {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.85rem;
+    margin-bottom: 20px;
+  }
+  .secao {
+    margin-bottom: 24px;
+  }
+  .secao-titulo {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #fbbf24;
+    border-left: 4px solid #fbbf24;
+    padding-left: 10px;
+    margin-bottom: 12px;
+  }
+  .card {
+    background: #1e2330;
+    border: 1px solid #2e3650;
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .card-nome {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #a5f3fc;
+    margin-bottom: 6px;
+  }
+  .card-desc {
+    font-size: 0.78rem;
+    color: #94a3b8;
+    margin-bottom: 10px;
+  }
+  .card-codigo {
+    background: #0d1117;
+    border-radius: 6px;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 0.75rem;
+    color: #86efac;
+    word-break: break-all;
+    white-space: pre-wrap;
+    margin-bottom: 10px;
+    border: 1px solid #1e3a2f;
+  }
+  .btn-copiar {
+    background: #1d4ed8;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 7px 16px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-copiar:hover { background: #2563eb; }
+  .btn-copiar.copiado {
+    background: #16a34a;
+  }
+  .busca {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid #2e3650;
+    background: #1e2330;
+    color: #e0e0e0;
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+  }
+  .busca::placeholder { color: #64748b; }
+</style>
+</head>
+<body>
+
+<h1>📦 Banco de Comandos Termux</h1>
+<p class="subtitulo">Clique em "Copiar" e cole no terminal do Mini SK</p>
+
+<input class="busca" type="text" id="busca" placeholder="🔍 Buscar comando..." oninput="filtrar()">
+
+<div id="lista">
+
+  <!-- SEÇÃO: DIAGNÓSTICO -->
+  <div class="secao" data-secao>
+    <div class="secao-titulo">🔍 Diagnóstico — O que está instalado</div>
+
+    <div class="card" data-card>
+      <div class="card-nome">Ver tudo instalado e salvar em Downloads</div>
+      <div class="card-desc">Gera o arquivo termux-instalados.txt na pasta Downloads com tudo: Termux, NPM global, projeto SK e Python.</div>
+      <div class="card-codigo">echo "=== TERMUX GLOBAL ===" > ~/storage/downloads/termux-instalados.txt && pkg list-installed >> ~/storage/downloads/termux-instalados.txt && echo "" >> ~/storage/downloads/termux-instalados.txt && echo "=== NPM GLOBAL ===" >> ~/storage/downloads/termux-instalados.txt && npm list -g --depth=0 2>/dev/null >> ~/storage/downloads/termux-instalados.txt && echo "" >> ~/storage/downloads/termux-instalados.txt && echo "=== PROJETO SK-Juridico ===" >> ~/storage/downloads/termux-instalados.txt && cd ~/minisk/SK-Juridico-1.7.6 && npm list --depth=0 2>/dev/null >> ~/storage/downloads/termux-instalados.txt && echo "" >> ~/storage/downloads/termux-instalados.txt && echo "=== PYTHON PACOTES ===" >> ~/storage/downloads/termux-instalados.txt && pip list 2>/dev/null >> ~/storage/downloads/termux-instalados.txt && echo "✅ Arquivo salvo em Downloads!"</div>
+      <button class="btn-copiar" onclick="copiar(this)">📋 Copiar</button>
+    </div>
+
+    <div class="card" data-card>
+      <div class="card-nome">Ver só o que está no projeto SK</div>
+      <div class="card-desc">Lista os pacotes instalados dentro da pasta do projeto SK Jurídico.</div>
+      <div class="card-codigo">cd ~/minisk/SK-Juridico-1.7.6 && npm list --depth=0</div>
+      <button class="btn-copiar" onclick="copiar(this)">📋 Copiar</button>
+    </div>
+
+    <div class="card" data-card>
+      <div class="card-nome">Ver pacotes NPM globais</div>
+      <div class="card-desc">Lista tudo que foi instalado globalmente no Node/NPM do Termux.</div>
+      <div class="card-codigo">npm list -g --depth=0</div>
+      <button class="btn-copiar" onclick="copiar(this)">📋 Copiar</button>
+    </div>
+
+    <div class="card" data-card>
+      <div class="card-nome">Ver pacotes Python instalados</div>
+      <div class="card-desc">Lista tudo que foi instalado via pip no Termux.</div>
+      <div class="card-codigo">pip list</div>
+      <button class="btn-copiar" onclick="copiar(this)">📋 Copiar</button>
+    </div>
+
+    <div class="card" data-card>
+      <div class="card-nome">Ver versões instaladas (Node, Python, Git)</div>
+      <div class="card-desc">Mostra a versão de cada ferramenta principal.</div>
+      <div class="card-codigo">echo "Node: $(node -v)" && echo "NPM: $(npm -v)" && echo "Python: $(python --version)" && echo "Git: $(git --version)" && echo "PM2: $(pm2 -v 2>/dev/null || echo 'não instalado')"</div>
+      <button class="btn-copiar" onclick="copiar(this)">📋 Copiar</button>
+    </div>
+
+  </div>
+
+  <!-- SEÇÃO: INSTALAÇÃO -->
+  <div class="secao" data-secao>
+    <div class="secao-titulo">⚙️ Instalação — Pacotes essenciais</div>
+
+    <div class="card" data-card>
+      <div class="card-nome">Instalar dependências do projeto SK</div>
+      <div class="card-desc">Entra na pasta do projeto e instala tudo que está no package.json.</div>
+      <div class="card-codigo">cd ~/minisk/SK-Juridico-1.7.6 && npm install</div>
+      <button class="btn-copiar" onclick="copiar(this)">📋 Copiar</button>
+    </div>
+
+    <div class="card" data-card>
+      <div class="card-nome">Instalar pacotes essenciais do servidor</div>
+      <div class="card-desc">Instala express, dotenv, cors, jsonwebtoken e tsx dentro do projeto.</div>
+      <div class="card-codigo">cd ~/minisk/SK-Juridico-1.7.6 && npm install express dotenv cors jsonwebtoken tsx</div>
+      <button class="btn-copiar" onclick="copiar(this)">📋 Copiar</button>
+    </div>
+
+    <div class="card" data-card>
+      <div class="card-nome">Instalar banco de dados local (SQLite)</div>
+      <div class="card-desc">Instala o better-sqlite3 para usar banco local sem precisar do Neon/nuvem.</div>
+      <div class="card-codigo">cd ~/minisk/SK-Juridico-1.7.6 && npm install better-sqlite3</div>
+      <button class="btn-copiar" onclick="copiar(this)">📋 Copiar</button>
+    </div>
+
+    <div class="card" data-card>
+      <div class="card-nome">Instalar PM2 (mantém servidor rodando)</div>
+      <div class="card-desc">Instala o PM2 globalmente para o servidor não cair quando fechar o terminal.</div>
+      <div class="card-codigo">npm install -g pm2</div>
+      <button class="btn-copiar" onclick="copiar(this)">📋 Copiar</button>
+    </div>
+
+  </div>
+
+  <!-- SEÇÃO: SERVIDOR -->
+  <div class="secao" data-secao>
+    <div class="secao-titulo">🚀 Servidor — Iniciar e parar</div>
+
+    <div class="card" data-card>
+      <div class="card-nome">Iniciar o servidor SK Jurídico</div>
+      <div class="card-desc">Entra na pasta e tenta iniciar o servidor do projeto.</div>
+      <div class="card-codigo">cd ~/minisk/SK-Juridico-1.7.6 && npm run dev</div>
+      <button class="btn-copiar" onclick="copiar(this)">📋 Copiar</button>
+    </div>
+
+    <div class="card" data-card>
+      <div class="card-nome">Ver o que está rodando nas portas</div>
+      <div class="card-desc">Mostra quais processos estão ocupando portas no momento.</div>
+      <div class="card-codigo">ss -tlnp | grep -E '3000|5000|8080|4000'</div>
+      <button class="btn-copiar" onclick="copiar(this)">📋 Copiar</button>
+    </div>
+
+    <div class="card" data-card>
+      <div class="card-nome">Matar processo em porta específica</div>
+      <div class="card-desc">Para o processo que está usando a porta 3000 (troque o número se precisar).</div>
+      <div class="card-codigo">fuser -k 3000/tcp</div>
+      <button class="btn-copiar" onclick="copiar(this)">📋 Copiar</button>
+    </div>
+
+  </div>
+
+  <!-- SEÇÃO: ARQUIVOS -->
+  <div class="secao" data-secao>
+    <div class="secao-titulo">📁 Arquivos — Navegar e organizar</div>
+
+    <div class="card" data-card>
+      <div class="card-nome">Ver pastas do Mini SK</div>
+      <div class="card-desc">Lista o que existe dentro da pasta principal do Mini SK.</div>
+      <div class="card-codigo">ls -la ~/minisk/</div>
+      <button class="btn-copiar" onclick="copiar(this)">📋 Copiar</button>
+    </div>
+
+    <div class="card" data-card>
+      <div class="card-nome">Ver tamanho das pastas</div>
+      <div class="card-desc">Mostra quanto espaço cada pasta do Mini SK está ocupando.</div>
+      <div class="card-codigo">du -sh ~/minisk/*/</div>
+      <button class="btn-copiar" onclick="copiar(this)">📋 Copiar</button>
+    </div>
+
+    <div class="card" data-card>
+      <div class="card-nome">Fazer backup do projeto SK</div>
+      <div class="card-desc">Copia o projeto inteiro para a pasta Downloads com data no nome.</div>
+      <div class="card-codigo">cp -r ~/minisk/SK-Juridico-1.7.6 ~/storage/downloads/SK-backup-$(date +%Y%m%d-%H%M)</div>
+      <button class="btn-copiar" onclick="copiar(this)">📋 Copiar</button>
+    </div>
+
+  </div>
+
+  <!-- SEÇÃO: SAÚDE DO CELULAR -->
+  <div class="secao" data-secao>
+    <div class="secao-titulo">📱 Saúde do celular</div>
+
+    <div class="card" data-card>
+      <div class="card-nome">Ver memória RAM disponível</div>
+      <div class="card-desc">Mostra quanto de memória está livre e em uso.</div>
+      <div class="card-codigo">free -h</div>
+      <button class="btn-copiar" onclick="copiar(this)">📋 Copiar</button>
+    </div>
+
+    <div class="card" data-card>
+      <div class="card-nome">Ver espaço em disco</div>
+      <div class="card-desc">Mostra quanto espaço está livre no armazenamento.</div>
+      <div class="card-codigo">df -h ~/storage/</div>
+      <button class="btn-copiar" onclick="copiar(this)">📋 Copiar</button>
+    </div>
+
+    <div class="card" data-card>
+      <div class="card-nome">Ver tudo de uma vez — saúde geral</div>
+      <div class="card-desc">Mostra RAM, disco e processos rodando de uma vez só.</div>
+      <div class="card-codigo">echo "=== RAM ===" && free -h && echo "" && echo "=== DISCO ===" && df -h ~/storage/ && echo "" && echo "=== PROCESSOS ===" && ps aux | grep -E 'node|python|npm' | grep -v grep</div>
+      <button class="btn-copiar" onclick="copiar(this)">📋 Copiar</button>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+function copiar(btn) {
+  const codigo = btn.previousElementSibling.textContent;
+  navigator.clipboard.writeText(codigo).then(() => {
+    btn.textContent = "✅ Copiado!";
+    btn.classList.add("copiado");
+    setTimeout(() => {
+      btn.textContent = "📋 Copiar";
+      btn.classList.remove("copiado");
+    }, 2000);
+  }).catch(() => {
+    // fallback para celular
+    const ta = document.createElement("textarea");
+    ta.value = codigo;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    btn.textContent = "✅ Copiado!";
+    btn.classList.add("copiado");
+    setTimeout(() => {
+      btn.textContent = "📋 Copiar";
+      btn.classList.remove("copiado");
+    }, 2000);
+  });
+}
+
+function filtrar() {
+  const termo = document.getElementById("busca").value.toLowerCase();
+  document.querySelectorAll("[data-card]").forEach(card => {
+    const texto = card.textContent.toLowerCase();
+    card.style.display = texto.includes(termo) ? "block" : "none";
+  });
+  document.querySelectorAll("[data-secao]").forEach(secao => {
+    const visiveis = [...secao.querySelectorAll("[data-card]")].some(c => c.style.display !== "none");
+    secao.style.display = visiveis ? "block" : "none";
+  });
+}
+</script>
+
+<script>// JavaScript extra
+console.log("Playground pronto!");</script></body>
+</html>

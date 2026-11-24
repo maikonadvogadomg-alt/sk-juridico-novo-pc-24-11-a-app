@@ -1,0 +1,52 @@
+# 💬 Meu Chat 17/11-J — 🐘 Neon
+- ⚙️ → ☁️ Nuvem → escolha **🐘 Neon**: cole o endereço do Neon (postgresql://…) e toque em 🔌 Conectar — o app **cria a tabela sozinho** (nada em inglês para rodar). O mesmo Neon serve para o SK Jurídico HTML.
+- O endereço tem a senha do banco: fica só no aparelho (não vai para a nuvem).
+- ☁️ Supabase continua como opção (com login, para vários aparelhos e clientes no futuro).
+
+# 💬 Meu Chat 17/11-I — ☁️ Nuvem (Supabase)
+- ⚙️ → **☁️ Nuvem**: entre com e-mail e senha no celular e no PC → as **conversas, a memória, as configurações e os contextos** vão junto. Funciona sem internet também (tudo fica no aparelho; a nuvem só copia).
+- As **fotos** ficam só no aparelho (não enchem a nuvem). As **chaves de IA não vão** — só se você tocar em 🔐 Guardar as chaves trancadas (com a senha do cofre: o Supabase nunca vê a chave aberta).
+- 1ª vez: criar o Supabase grátis (passo a passo na própria tela) + 📋 Copiar o SQL e rodar lá uma vez.
+- Sincroniza sozinho: ao abrir, a cada minuto e quando muda algo. 🔄 Sincronizar agora / ⬆ Mandar tudo deste aparelho.
+- Neon não dá direto do navegador (precisa de servidor no meio); por isso o Supabase.
+
+# 💬 Meu Chat 17/11-H
+- **🧭 Guia** (botão novo na barra, junto do 🌐): LIGADO = o guia dos seus apps vai junto sempre (gasta mais); DESLIGADO = só vai quando você pergunta dos seus apps.
+- Caixinha de código com **📋 Copiar** escrito (e 👁 Ver funcionando, ⤓ baixar).
+- **✏️ Playground na prévia**: 👁 Ver funcionando → ✏️ Editar → mexa no código → ▶ Rodar de novo. 📋 Copiar leva o código mexido para o chat.
+- 🦙 Ollama não fica mais repetindo a mesma frase (penalidade de repetição + limite de tamanho).
+
+# 💬 Meu Chat 17/11-G — gasta menos o limite grátis e responde completo
+- O guia inteiro ia junto em TODA mensagem (umas 8 mil palavras-pedaço). Agora só vai quando você pergunta dos seus apps; nas outras vai um resumo de 1 linha → a conversa normal gasta uns 4 vezes menos.
+- Vão junto 16 mensagens (antes 30); as antigas viram resumo, ela não esquece.
+- ⚙️ **📏 Tamanho da resposta** (Curto / Normal / Longo / Código grande) e **🌡 Temperatura**, igual ao AI Code Studio.
+- Ela não é mais obrigada a "responder curto primeiro": texto, peça, explicação e código saem completos.
+- OpenRouter: só modelos **grátis**, os melhores primeiro (o "openrouter/auto" gastava crédito → "acabou o crédito").
+- 🔊 A voz do Gemini tem cota grátis pequena: quando acaba, troca sozinha para a 📱 voz do aparelho e o chat continua.
+
+# 💬 Meu Chat 16/11-F
+- 🧭 **Guia novo** (botão no topo): o que é cada app seu, a versão atual e **como usar, passo a passo** (Laboratório: 🧬 Combinar, 🧩 Grupos, 📦 Desembrulhar…; SK Jurídico 1.7.6; Mini SK; Laboratório 2; Colecionador; Colador…). 🔊 lê em voz alta; 🤖 Perguntar: o chat explica aquele app. Procurar por palavra.
+- A IA do chat também sabe tudo isso (versões atuais e qual usar para quê).
+
+MEU CHAT — o seu chat com IA (modular)
+
+COMO ABRIR
+- No celular: abra o index.html de dentro da pasta Meu-Chat (do jeito que você abre o Mini SK).
+  Para ficar como app: menu ⋮ do Chrome → Instalar app. No app instalado o microfone funciona.
+- Ou publique pelo Mini SK (abrir a pasta como projeto → 🚀 Publicar) e abra o endereço do GitHub Pages.
+
+PRIMEIRA VEZ
+1. Toque em ⚙️ → cole uma chave GRÁTIS (Groq, Gemini ou OpenRouter — qualquer uma) → Guardar.
+   Pode pôr várias chaves (Gemini, Groq, OpenRouter...). Quando uma chega no limite, ele passa para a próxima.
+2. Pronto: escreva ou toque no 🎤.
+
+O QUE TEM
+- 🎤 falar e 🔊 ouvir com a VOZ DO CELULAR (grátis, sem chave; a pt-br-x-pte é a escolhida se existir) — Francisco grátis no PC; Gemini só se você quiser · 🙌 mãos livres (conversa só por voz)
+- 📷 foto ou print para a IA ver (também dá para colar um print)
+- 🌐 pesquisar na internet (o Gemini pesquisa sozinho; para outras IAs, ponha a chave de busca em ⚙️)
+- 🔗 cole um link na mensagem: ela lê a página
+- 🧠 memória que vai em toda conversa (ela guarda sozinha o que é importante; você edita em 🧠)
+- 👁 ver funcionando: códigos HTML, TSX e JSX abrem na hora
+- 💾 backup de tudo e restaurar SEM APAGAR NADA · 📤 Drive
+
+As chaves ficam só no seu aparelho.
